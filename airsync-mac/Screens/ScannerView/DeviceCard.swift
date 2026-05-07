@@ -20,14 +20,17 @@ struct DeviceCard: View {
                 // Compact Mode
                 Button(action: connectAction) {
                     HStack(spacing: 8) {
-                        if isLoading {
-                            ProgressView()
-                                .controlSize(.small)
-                                .frame(width: 16, height: 16)
-                        } else {
+                        ZStack {
+                            if isLoading {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .frame(width: 16, height: 16)
+                            }
+                            
                             Image(systemName: "iphone")
                                 .font(.system(size: 16))
                                 .matchedGeometryEffect(id: "icon-\(device.id)", in: namespace)
+                                .opacity(isLoading ? 0 : 1)
                         }
                         
                         VStack(alignment: .leading, spacing: 0) {
