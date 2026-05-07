@@ -51,20 +51,11 @@ struct MenubarView: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            // Arrow (if needed, but usually we just want it on the top segment)
-            ZStack(alignment: .top) {
-                PopoverArrow()
-                    .fill(.ultraThinMaterial)
-                    .frame(width: 16, height: 8)
-                    .offset(y: -8)
-                    .applyGlassViewIfAvailable() // Match the style
                 
-                TopSegmentView(
-                    toolButtonSize: toolButtonSize,
-                    openAndFocusMainWindow: openAndFocusMainWindow
-                )
-            }
-            .padding(.top, 8)
+            TopSegmentView(
+                toolButtonSize: toolButtonSize,
+                openAndFocusMainWindow: openAndFocusMainWindow
+            )
             .staggeredEntrance(index: 0, isVisible: appState.isMenubarWindowOpen)
             
             DiscoverySegmentView()
