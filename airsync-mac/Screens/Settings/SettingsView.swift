@@ -153,7 +153,7 @@ struct SettingsView: View {
                     headerSection(title: "Bluetooth LE Sync", icon: "point.3.connected.trianglepath.dotted")
                     VStack {
                         HStack {
-                            Label("Enable BLE Sync", systemImage: "bapp.connected.to.app.below.fill")
+                            Label("Enable BLE Sync", systemImage: "point.3.connected.trianglepath.dotted")
                             Spacer()
                             Toggle("", isOn: $appState.isBLEEnabled)
                                 .toggleStyle(.switch)
@@ -169,24 +169,20 @@ struct SettingsView: View {
                             
                             switch BLECentralManager.shared.connectionStatus {
                             case .scanning:
-                                Text("Scanning for phone...")
+                                Text("Scanning...")
                                     .font(.caption)
-                                    .foregroundColor(.blue)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             case .connected:
-                                Text("Connected (Authenticating...)")
+                                Text("Authenticating...")
                                     .font(.caption)
-                                    .foregroundColor(.orange)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             case .authenticated:
-                                Text("Connected & Authenticated")
+                                Text("Connected")
                                     .font(.caption)
-                                    .foregroundColor(.green)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             case .disconnected:
                                 Text("Disconnected")
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
