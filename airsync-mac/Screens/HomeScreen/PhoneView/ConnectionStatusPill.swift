@@ -63,7 +63,7 @@ struct ConnectionStatusPill: View {
                 
                 // BLE Connection Icon
                 if bleManager.isAuthenticated {
-                    Image(systemName: "antenna.radiowaves.left.and.right")
+                    Image(systemName: "point.3.connected.trianglepath.dotted")
                         .contentTransition(.symbolEffect(.replace))
                         .help("BLE Connected")
                         .transition(.asymmetric(
@@ -144,7 +144,7 @@ struct ConnectionPillPopover: View {
                     ConnectionInfoText(
                         label: "IP Address",
                         icon: "wifi",
-                        text: appState.device?.ipAddress == "BLE" ? "Not available (BLE only)" : currentIPAddress,
+                        text: appState.device?.ipAddress == "BLE" ? "BLE only" : currentIPAddress,
                         activeIp: appState.device?.ipAddress == "BLE" ? nil : appState.activeMacIp
                     )
                     
