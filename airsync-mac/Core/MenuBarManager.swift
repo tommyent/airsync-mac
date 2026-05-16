@@ -109,7 +109,12 @@ class MenuBarManager: NSObject {
     }
     
     private func getDeviceStatusText() -> String? {
-        let connectedDeviceName = appState.device?.name ?? BLECentralManager.shared.connectedDeviceName
+        let isBLEAuthenticated = BLECentralManager.shared.isAuthenticated
+        let isWSConnected = appState.device != nil
+        
+        guard isWSConnected || isBLEAuthenticated else { return nil }
+        
+        let connectedDeviceName = appState.device?.name ?? (isBLEAuthenticated ? BLECentralManager.shared.connectedDeviceName : nil)
         guard let name = connectedDeviceName else { return nil }
         
         let unreadCount = appState.notifications.count

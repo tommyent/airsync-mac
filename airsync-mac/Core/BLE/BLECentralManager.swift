@@ -38,6 +38,7 @@ class BLECentralManager: NSObject, ObservableObject {
     
     private var scanTimer: Timer?
     private var connectionTimer: Timer?
+    private var watchdogTimer: Timer?
     
     func startScanning() {
         guard centralManager.state == .poweredOn else { return }
@@ -46,6 +47,7 @@ class BLECentralManager: NSObject, ObservableObject {
         
         centralManager.stopScan()
         scanTimer?.invalidate()
+        scanTimer = nil
         
         centralManager.scanForPeripherals(withServices: [BLEConstants.serviceSystem], options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
         
@@ -67,6 +69,9 @@ class BLECentralManager: NSObject, ObservableObject {
     }
     
     func disconnect() {
+        watchdogTimer?.invalidate()
+        watchdogTimer = nil
+        
         if let peripheral = discoveredPeripheral {
             centralManager.cancelPeripheralConnection(peripheral)
         }
@@ -74,6 +79,7 @@ class BLECentralManager: NSObject, ObservableObject {
     }
     
     func write(characteristicUUID: CBUUID, data: Data) {
+        resetWatchdog()
         guard let peripheral = discoveredPeripheral, let char = characteristics[characteristicUUID] else { return }
         peripheral.writeValue(data, for: char, type: .withoutResponse)
     }
@@ -83,6 +89,16 @@ class BLECentralManager: NSObject, ObservableObject {
         let chunks = BLEChunkUtil.splitIntoChunks(payload: payload, mtu: mtu)
         for chunk in chunks {
             write(characteristicUUID: characteristicUUID, data: chunk)
+        }
+    }
+    
+    private func resetWatchdog() {
+        DispatchQueue.main.async {
+            self.watchdogTimer?.invalidate()
+            self.watchdogTimer = Timer.scheduledTimer(withTimeInterval: 25.0, repeats: false) { [weak self] _ in
+                print("[BLE] Heartbeat timeout (25s), disconnecting...")
+                self?.disconnect()
+            }
         }
     }
 }
@@ -107,7 +123,7 @@ extension BLECentralManager: CBCentralManagerDelegate {
         
         // Always connect if discovered while scanning
         discoveredPeripheral = peripheral
-        connectedDeviceName = name
+        // connectedDeviceName = name // Move this to auth success
         centralManager.stopScan()
         scanTimer?.invalidate()
         scanTimer = nil
@@ -147,6 +163,8 @@ extension BLECentralManager: CBCentralManagerDelegate {
         connectionStatus = .connected
         peripheral.delegate = self
         peripheral.discoverServices([BLEConstants.serviceSystem, BLEConstants.serviceNotifications, BLEConstants.serviceMedia, BLEConstants.serviceClipboard])
+        
+        resetWatchdog()
     }
     
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
@@ -169,6 +187,9 @@ extension BLECentralManager: CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         connectionTimer?.invalidate()
         connectionTimer = nil
+        watchdogTimer?.invalidate()
+        watchdogTimer = nil
+        
         print("[BLE] Disconnected: \(error?.localizedDescription ?? "clean")")
         connectionStatus = .disconnected
         discoveredPeripheral = nil
@@ -231,6 +252,7 @@ extension BLECentralManager: CBPeripheralDelegate {
     }
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+        resetWatchdog()
         guard let data = characteristic.value else { return }
         
         switch characteristic.uuid {
@@ -238,6 +260,7 @@ extension BLECentralManager: CBPeripheralDelegate {
             if data.first == BLEConstants.authSuccess {
                 print("[BLE] Auth Success!")
                 connectionStatus = .authenticated
+                connectedDeviceName = discoveredPeripheral?.name ?? "Android Device"
                 
                 // Immediately notify Android of Mac status
                 WebSocketServer.shared.sendMacStatusOverBLE()
