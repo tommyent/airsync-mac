@@ -15,7 +15,12 @@ class BLECentralManager: NSObject, ObservableObject {
     
     @Published var connectionStatus: BLEConnectionStatus = .disconnected
     @Published var connectedDeviceName: String? = nil
-    @Published var discoveredPeripherals: [String: CBPeripheral] = [:]
+    struct BLEDiscoveryRecord {
+        let peripheral: CBPeripheral
+        var lastSeen: Date
+    }
+    
+    @Published var discoveredPeripherals: [String: BLEDiscoveryRecord] = [:]
     @Published var connectingDeviceUUID: String? = nil
     
     var isManuallyDisconnected = false
@@ -57,9 +62,18 @@ class BLECentralManager: NSObject, ObservableObject {
         
         // Restart scan periodically to avoid stale states
         scanTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
             print("[BLE] Restarting scan...")
-            self?.centralManager.stopScan()
-            self?.centralManager.scanForPeripherals(withServices: [BLEConstants.serviceSystem], options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
+            
+            // Prune stale devices older than 25 seconds
+            let now = Date()
+            let staleUUIDs = self.discoveredPeripherals.filter { now.timeIntervalSince($1.lastSeen) > 15.0 }.map { $0.key }
+            for uuid in staleUUIDs {
+                self.discoveredPeripherals.removeValue(forKey: uuid)
+            }
+            
+            self.centralManager.stopScan()
+            self.centralManager.scanForPeripherals(withServices: [BLEConstants.serviceSystem], options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
         }
     }
     
@@ -105,20 +119,32 @@ class BLECentralManager: NSObject, ObservableObject {
     }
     
     var discoveredBLEDevices: [DiscoveredDevice] {
-        discoveredPeripherals.values.map { peripheral in
+        let token = UserDefaults.standard.string(forKey: "bleAuthToken") ?? ""
+        if token.isEmpty {
+            return []
+        }
+        
+        return discoveredPeripherals.values.map { record in
             DiscoveredDevice(
-                deviceId: peripheral.identifier.uuidString,
-                name: peripheral.name ?? "Android Device",
+                deviceId: record.peripheral.identifier.uuidString,
+                name: record.peripheral.name ?? "Android Device",
                 ips: ["Bluetooth LE"],
                 port: 0,
                 type: "ble",
-                lastSeen: Date()
+                lastSeen: record.lastSeen
             )
         }
     }
     
     func connectManually(toUuid uuidStr: String) {
-        guard let peripheral = discoveredPeripherals[uuidStr] else { return }
+        let token = UserDefaults.standard.string(forKey: "bleAuthToken") ?? ""
+        if token.isEmpty {
+            print("[BLE] Cannot connect manually: Devices have never been paired via QR/Wi-Fi before.")
+            return
+        }
+        
+        guard let record = discoveredPeripherals[uuidStr] else { return }
+        let peripheral = record.peripheral
         print("[BLE] Manual connection requested for \(peripheral.name ?? "Unknown")")
         
         isManuallyDisconnected = false
@@ -179,11 +205,16 @@ extension BLECentralManager: CBCentralManagerDelegate {
         
         let uuidStr = peripheral.identifier.uuidString
         DispatchQueue.main.async {
-            self.discoveredPeripherals[uuidStr] = peripheral
+            self.discoveredPeripherals[uuidStr] = BLEDiscoveryRecord(peripheral: peripheral, lastSeen: Date())
         }
         
         // Auto connect if enabled and not manually disconnected
         if AppState.shared.isBLEAutoConnectEnabled && !isManuallyDisconnected {
+            let token = UserDefaults.standard.string(forKey: "bleAuthToken") ?? ""
+            if token.isEmpty {
+                return
+            }
+            
             discoveredPeripheral = peripheral
             centralManager.stopScan()
             scanTimer?.invalidate()
@@ -312,7 +343,8 @@ extension BLECentralManager: CBPeripheralDelegate {
             print("[BLE] Attempting authentication...")
             write(characteristicUUID: BLEConstants.charAuthToken, data: data)
         } else {
-            print("[BLE] Auth token is empty, skipping auth")
+            print("[BLE] Auth token is empty, skipping auth and disconnecting because they have never paired")
+            disconnect()
         }
     }
     

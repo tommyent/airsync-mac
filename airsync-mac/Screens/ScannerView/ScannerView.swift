@@ -78,7 +78,8 @@ struct ScannerView: View {
                             .foregroundColor(.secondary)
                     }
                     .transition(.opacity.combined(with: .scale))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: 240)
+
                 } else {
                     HStack {
                         Spacer()
@@ -166,7 +167,7 @@ struct ScannerView: View {
                         Spacer()
                     }
                     .transition(.opacity.combined(with: .scale))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: 240)
                 }
             }
             .animation(.spring(response: 0.5, dampingFraction: 0.8), value: allDiscoveredDevices)
