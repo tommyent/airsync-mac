@@ -130,6 +130,28 @@ struct ScannerView: View {
                                     .transition(.opacity)
                             }
                         }
+
+                        HStack(spacing: 24) {
+                            HStack(spacing: 6) {
+                                Image("logo.bluetooth")
+                                    .foregroundColor(.accentColor)
+                                Toggle("BLE", isOn: $appState.isBLEEnabled)
+                                    .toggleStyle(.switch)
+                                    .controlSize(.small)
+                            }
+                            
+                            HStack(spacing: 6) {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .foregroundColor(.accentColor)
+                                Toggle("Auto-connect", isOn: $appState.isBLEAutoConnectEnabled)
+                                    .toggleStyle(.switch)
+                                    .controlSize(.small)
+                                    .disabled(!appState.isBLEEnabled)
+                            }
+                        }
+                        .padding()
+                        .glassBoxIfAvailable(radius: 24)
+                        .padding(.top, 12)
                     }
                     .transition(.move(edge: .top).combined(with: .opacity))
                     .onTapGesture {
