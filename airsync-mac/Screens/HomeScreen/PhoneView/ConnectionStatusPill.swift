@@ -61,10 +61,8 @@ struct ConnectionStatusPill: View {
                     }
                 }
                 
-                // BLE Connection Icon
                 if bleManager.isAuthenticated {
-                    Image(systemName: "point.3.connected.trianglepath.dotted")
-                        .contentTransition(.symbolEffect(.replace))
+                    Image("logo.bluetooth")
                         .help("BLE Connected")
                         .transition(.asymmetric(
                             insertion: .scale.combined(with: .opacity),
@@ -163,11 +161,10 @@ struct ConnectionPillPopover: View {
                             .toggleStyle(.switch)
                     }
 
-                    // BLE Status
                     if appState.isBLEEnabled {
                         ConnectionInfoText(
                             label: "Bluetooth LE",
-                            icon: "point.3.connected.trianglepath.dotted",
+                            icon: "logo.bluetooth",
                             text: bleStatusText
                         )
                     }
