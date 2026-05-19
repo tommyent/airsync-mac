@@ -18,6 +18,8 @@ class BLECentralManager: NSObject, ObservableObject {
     @Published var discoveredPeripherals: [String: CBPeripheral] = [:]
     @Published var connectingDeviceUUID: String? = nil
     
+    var isManuallyDisconnected = false
+    
     var isConnected: Bool {
         connectionStatus != .disconnected && connectionStatus != .scanning
     }
@@ -73,6 +75,7 @@ class BLECentralManager: NSObject, ObservableObject {
     func disconnect() {
         watchdogTimer?.invalidate()
         watchdogTimer = nil
+        isManuallyDisconnected = true
         
         if let peripheral = discoveredPeripheral {
             centralManager.cancelPeripheralConnection(peripheral)
@@ -80,6 +83,11 @@ class BLECentralManager: NSObject, ObservableObject {
         connectionStatus = .disconnected
         connectingDeviceUUID = nil
         discoveredPeripherals.removeAll()
+        
+        // Resume scanning to immediately show nearby devices in the unpaired list
+        if AppState.shared.isBLEEnabled {
+            startScanning()
+        }
     }
     
     func write(characteristicUUID: CBUUID, data: Data) {
@@ -113,6 +121,7 @@ class BLECentralManager: NSObject, ObservableObject {
         guard let peripheral = discoveredPeripherals[uuidStr] else { return }
         print("[BLE] Manual connection requested for \(peripheral.name ?? "Unknown")")
         
+        isManuallyDisconnected = false
         discoveredPeripheral = peripheral
         centralManager.stopScan()
         scanTimer?.invalidate()
@@ -173,8 +182,8 @@ extension BLECentralManager: CBCentralManagerDelegate {
             self.discoveredPeripherals[uuidStr] = peripheral
         }
         
-        // Auto connect if enabled
-        if AppState.shared.isBLEAutoConnectEnabled {
+        // Auto connect if enabled and not manually disconnected
+        if AppState.shared.isBLEAutoConnectEnabled && !isManuallyDisconnected {
             discoveredPeripheral = peripheral
             centralManager.stopScan()
             scanTimer?.invalidate()
@@ -198,7 +207,7 @@ extension BLECentralManager: CBCentralManagerDelegate {
                 self.characteristics.removeAll()
                 self.discoveredServiceCount = 0
                 
-                if AppState.shared.isBLEAutoConnectEnabled {
+                if AppState.shared.isBLEAutoConnectEnabled && !self.isManuallyDisconnected {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                         self.startScanning()
                     }
@@ -232,7 +241,7 @@ extension BLECentralManager: CBCentralManagerDelegate {
         discoveredServiceCount = 0
         
         // Retry scanning after a delay
-        if AppState.shared.isBLEAutoConnectEnabled {
+        if AppState.shared.isBLEAutoConnectEnabled && !isManuallyDisconnected {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
                 self.startScanning()
             }
@@ -254,7 +263,7 @@ extension BLECentralManager: CBCentralManagerDelegate {
         chunkBuffers.removeAll()
         discoveredServiceCount = 0
         
-        if AppState.shared.isBLEAutoConnectEnabled {
+        if AppState.shared.isBLEAutoConnectEnabled && !isManuallyDisconnected {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
                 self.startScanning()
             }

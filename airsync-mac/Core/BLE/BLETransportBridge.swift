@@ -45,7 +45,12 @@ class BLETransportBridge {
                     WebSocketServer.shared.handleVolumeControl(action: action)
                 }
             case "remote":
-                self.handleRemoteControl(action, value: value)
+                if action == "manual_disconnect" {
+                    print("[BLE] Received manual disconnect from Android client! Instantly disconnecting...")
+                    BLECentralManager.shared.disconnect()
+                } else {
+                    self.handleRemoteControl(action, value: value)
+                }
             default:
                 break
             }

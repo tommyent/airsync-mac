@@ -314,6 +314,7 @@ class AppState: ObservableObject {
         didSet {
             UserDefaults.standard.set(isBLEEnabled, forKey: "isBLEEnabled")
             if isBLEEnabled {
+                BLECentralManager.shared.isManuallyDisconnected = false
                 BLECentralManager.shared.startScanning()
             } else {
                 BLECentralManager.shared.stopScanning()
@@ -325,6 +326,9 @@ class AppState: ObservableObject {
     @Published var isBLEAutoConnectEnabled: Bool {
         didSet {
             UserDefaults.standard.set(isBLEAutoConnectEnabled, forKey: "isBLEAutoConnectEnabled")
+            if isBLEAutoConnectEnabled {
+                BLECentralManager.shared.isManuallyDisconnected = false
+            }
         }
     }
 
