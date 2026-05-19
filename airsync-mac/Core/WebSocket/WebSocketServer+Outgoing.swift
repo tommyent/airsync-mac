@@ -6,6 +6,7 @@
 import Foundation
 import Swifter
 import CryptoKit
+import AppKit
 
 extension WebSocketServer {
     
@@ -18,12 +19,13 @@ extension WebSocketServer {
         activeSessions.forEach { $0.writeText(message) }
     }
 
-    func sendToFirstAvailable(message: String) {
+    @discardableResult
+    func sendToFirstAvailable(message: String) -> Bool {
         lock.lock()
         guard let pId = primarySessionID,
               let session = activeSessions.first(where: { ObjectIdentifier($0) == pId }) else {
             lock.unlock()
-            return
+            return false
         }
         let key = symmetricKey
         lock.unlock()
@@ -33,6 +35,7 @@ extension WebSocketServer {
         } else {
             session.writeText(message)
         }
+        return true
     }
 
     private func sendMessage(type: String, data: [String: Any]) {
@@ -44,10 +47,76 @@ extension WebSocketServer {
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: messageDict, options: [])
             if let jsonString = String(data: jsonData, encoding: .utf8) {
-                sendToFirstAvailable(message: jsonString)
+                let sent = sendToFirstAvailable(message: jsonString)
+                if !sent && BLECentralManager.shared.isAuthenticated {
+                    sendOverBLE(type: type, data: data)
+                }
             }
         } catch {
             print("[websocket] Error creating \(type) message: \(error)")
+        }
+    }
+
+    private func sendOverBLE(type: String, data: [String: Any]) {
+        print("[ble] Sending message over BLE: \(type)")
+        switch type {
+        case "notificationAction":
+            if let id = data["id"] as? String, let name = data["name"] as? String {
+                let text = data["text"] as? String ?? ""
+                let payload = "\(id)|\(name)|\(text)"
+                BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charNotificationAction, payload: payload)
+            }
+        case "mediaControl":
+            if let action = data["action"] as? String {
+                BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charMediaControl, payload: action)
+            }
+        case "volumeControl":
+            if let action = data["action"] as? String {
+                BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charMediaControl, payload: action)
+            }
+        case "clipboardUpdate":
+            if let content = data["content"] as? String {
+                BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charClipboardDataWrite, payload: content)
+            }
+        case "dismissNotification":
+            if let id = data["id"] as? String {
+                BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charNotificationDismiss, payload: id)
+            }
+        case "status":
+            // Handle status over BLE
+            if let battery = data["battery"] as? [String: Any],
+               let level = battery["level"] as? Int,
+               let charging = battery["isCharging"] as? Bool {
+                let payload = [String(level), charging ? "1" : "0"].joined(separator: BLEConstants.delimiter)
+                BLECentralManager.shared.write(characteristicUUID: BLEConstants.charMacBattery, data: payload.data(using: .utf8)!)
+            }
+            // For media status
+            if let music = data["music"] as? [String: Any] {
+                let isPlaying = music["isPlaying"] as? Bool ?? false
+                let title = music["title"] as? String ?? ""
+                let artist = music["artist"] as? String ?? ""
+                let volume = music["volume"] as? Int ?? 0
+                let isMuted = music["isMuted"] as? Bool ?? false
+                let likeStatus = music["likeStatus"] as? String ?? "none"
+                let albumArt = music["albumArtLite"] as? String ?? "" // Use lite version for BLE
+                
+                let payload = [
+                    isPlaying ? "1" : "0",
+                    title,
+                    artist,
+                    String(volume),
+                    isMuted ? "1" : "0",
+                    likeStatus,
+                    albumArt
+                ].joined(separator: BLEConstants.delimiter)
+                
+                BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charMacMediaState, payload: payload)
+            }
+        case "disconnectRequest":
+            // Maybe handle disconnect?
+            break
+        default:
+            print("[ble] No BLE mapping for type: \(type)")
         }
     }
 
@@ -110,6 +179,9 @@ extension WebSocketServer {
 
     private func sendMediaAction(_ action: String) {
         sendMessage(type: "mediaControl", data: ["action": action])
+        
+        // Also send via BLE
+        BLETransportBridge.shared.sendMediaControl(action)
     }
 
     // MARK: - Volume Controls
@@ -124,6 +196,14 @@ extension WebSocketServer {
 
     private func sendVolumeAction(_ action: String) {
         sendMessage(type: "volumeControl", data: ["action": action])
+        
+        // Map volume actions to media actions or specific BLE writes if needed
+        // For now, only media control is explicitly in the BLE protocol
+        if action == "volumeUp" {
+            BLETransportBridge.shared.sendMediaControl("volUp")
+        } else if action == "volumeDown" {
+            BLETransportBridge.shared.sendMediaControl("volDown")
+        }
     }
 
     func sendMacVolumeUpdate(level: Int) {
@@ -135,7 +215,16 @@ extension WebSocketServer {
     }
 
     func sendClipboardUpdate(_ message: String) {
-        sendToFirstAvailable(message: message)
+        let sent = sendToFirstAvailable(message: message)
+        if !sent && BLECentralManager.shared.isAuthenticated {
+             // Extract text if possible or just send raw
+             if let data = message.data(using: .utf8),
+                let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                let innerData = dict["data"] as? [String: Any],
+                let text = innerData["text"] as? String {
+                 BLETransportBridge.shared.sendClipboard(text)
+             }
+        }
     }
 
     // MARK: - Device Status (Mac -> Android)
@@ -163,6 +252,22 @@ extension WebSocketServer {
             if let art = albumArtBase64 {
                 musicDict["albumArt"] = art
             }
+
+            // Create lite version for BLE (scaled down and compressed)
+            if let artworkData = musicInfo.artworkData, let image = NSImage(data: artworkData) {
+                let size = NSSize(width: 80, height: 80)
+                let frame = NSRect(x: 0, y: 0, width: size.width, height: size.height)
+                if let representation = image.bestRepresentation(for: frame, context: nil, hints: nil) {
+                    let resizedImage = NSImage(size: size, flipped: false, drawingHandler: { (_) -> Bool in
+                        return representation.draw(in: frame)
+                    })
+                    if let tiff = resizedImage.tiffRepresentation,
+                       let bitmap = NSBitmapImageRep(data: tiff),
+                       let jpegData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.3]) {
+                        musicDict["albumArtLite"] = jpegData.base64EncodedString()
+                    }
+                }
+            }
             
             statusDict["music"] = musicDict
         }
@@ -174,6 +279,28 @@ extension WebSocketServer {
 
     /// Executes a call control action on the Android device via ADB.
     /// Maps generic actions (accept, end) to specific ADB key events.
+    func sendMacStatusOverBLE() {
+        let batteryLevel: Int
+        let isCharging: Bool
+        
+        if let status = BatteryInfo.fetchStatus() {
+            batteryLevel = status.percentage
+            isCharging = status.isCharging
+        } else {
+            batteryLevel = -1 // Desktop Mac
+            isCharging = false
+        }
+        
+        let payload = "\(batteryLevel)|\(isCharging ? "1" : "0")"
+        if let data = payload.data(using: .utf8) {
+            BLECentralManager.shared.write(characteristicUUID: BLEConstants.charMacBattery, data: data)
+        }
+        
+        // Also send name if we have it
+        let name = Host.current().localizedName ?? "My Mac"
+        BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charDeviceName, payload: name)
+    }
+
     func sendCallAction(eventId: String, action: String) {
         let keyCode: String
         switch action.lowercased() {
