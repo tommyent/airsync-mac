@@ -9,6 +9,7 @@ import SwiftUI
 import QRCode
 internal import SwiftImageReadWrite
 import CryptoKit
+import LocalAuthentication
 
 struct ScannerView: View {
     @ObservedObject var appState = AppState.shared
@@ -19,6 +20,8 @@ struct ScannerView: View {
     @State private var copyStatus: String?
     @State private var hasValidIP: Bool = true
     @State private var showConfirmReset = false
+    @State private var isUnlocked = false
+    @State private var unlockTimer: Timer? = nil
     @Namespace private var animation
 
     private func statusInfo(for status: WebSocketStatus) -> (text: String, icon: String, color: Color) {
@@ -59,77 +62,110 @@ struct ScannerView: View {
                 // --- QR Code & Encryption Key Section ---
                 if showQR {
                     VStack {
-                        if let qrImage = qrImage {
-                            HStack{
-                                Text("Scan to connect")
-                                    .font(.title3)
-                                    .padding()
-
-                                    Label {
-                                        Text(info.text)
-                                            .foregroundColor(info.color)
-                                    } icon: {
-                                        Image(systemName: info.icon)
-                                            .foregroundColor(info.color)
-                                    }
-                                    .padding(6)
-                                    .glassBoxIfAvailable(radius: 20)
-
-                            }
-                            .padding(.bottom, 4)
-
-                            Image(decorative: qrImage, scale: 1.0)
-                                .resizable()
-                                .interpolation(.none)
-                                .frame(width: 240, height: 240)
-                                .accessibilityLabel("QR Code")
-                                .shadow(radius: 20)
+                        HStack{
+                            Text("Scan to connect")
+                                .font(.title3)
                                 .padding()
-                                .background(.black.opacity(0.6), in: .rect(cornerRadius: 30))
-                        } else {
-                            ProgressView("Generating QR…")
-                                .frame(width: 100, height: 100)
-                        }
 
-                        // Copy Key Button
-                        if let key = WebSocketServer.shared.getSymmetricKeyBase64(), !key.isEmpty {
-                            HStack {
-                                GlassButtonView(
-                                    label: "Copy Key",
-                                    systemImage: "key",
-                                    action: {
-                                        copyToClipboard(key)
-                                    }
-                                )
-
-                                GlassButtonView(
-                                    label: "Re-generate key",
-                                    systemImage: "repeat.badge.xmark",
-                                    iconOnly: true,
-                                    action: {
-                                        showConfirmReset = true
-                                    }
-                                )
-                            }
-                            .padding(.top, 8)
-                            .confirmationDialog(
-                                "Are you sure you want to reset the key? You will have to re-auth all the devices.",
-                                isPresented: $showConfirmReset
-                            ) {
-                                Button("Reset key", role: .destructive) {
-                                    WebSocketServer.shared.resetSymmetricKey()
-                                    generateQRAsync()
+                                Label {
+                                    Text(info.text)
+                                        .foregroundColor(info.color)
+                                } icon: {
+                                    Image(systemName: info.icon)
+                                        .foregroundColor(info.color)
                                 }
-                                Button("Cancel", role: .cancel) { }
-                            }
+                                .padding(6)
+                                .glassBoxIfAvailable(radius: 20)
 
-                            if let status = copyStatus {
-                                Text(status)
-                                    .font(.caption)
-                                    .foregroundColor(.green)
-                                    .transition(.opacity)
+                        }
+                        .padding(.bottom, 4)
+
+                        VStack {
+                            if let qrImage = qrImage {
+                                ZStack {
+                                    VStack {
+                                        Image(decorative: qrImage, scale: 1.0)
+                                            .resizable()
+                                            .interpolation(.none)
+                                            .frame(width: 240, height: 240)
+                                            .accessibilityLabel("QR Code")
+                                            .shadow(radius: 20)
+                                            .padding()
+                                            .background(.black.opacity(0.6), in: .rect(cornerRadius: 30))
+
+                                        // Copy Key Button
+                                        if let key = WebSocketServer.shared.getSymmetricKeyBase64(), !key.isEmpty {
+                                            HStack {
+                                                GlassButtonView(
+                                                    label: "Copy Key",
+                                                    systemImage: "key",
+                                                    action: {
+                                                        copyToClipboard(key)
+                                                    }
+                                                )
+
+                                                GlassButtonView(
+                                                    label: "Re-generate key",
+                                                    systemImage: "repeat.badge.xmark",
+                                                    iconOnly: true,
+                                                    action: {
+                                                        showConfirmReset = true
+                                                    }
+                                                )
+                                            }
+                                            .padding(.top, 8)
+                                            .confirmationDialog(
+                                                "Are you sure you want to reset the key? You will have to re-auth all the devices.",
+                                                isPresented: $showConfirmReset
+                                            ) {
+                                                Button("Reset key", role: .destructive) {
+                                                    WebSocketServer.shared.resetSymmetricKey()
+                                                    generateQRAsync()
+                                                }
+                                                Button("Cancel", role: .cancel) { }
+                                            }
+
+                                            if let status = copyStatus {
+                                                Text(status)
+                                                    .font(.caption)
+                                                    .foregroundColor(.green)
+                                                    .transition(.opacity)
+                                            }
+                                        }
+                                    }
+                                    .blur(radius: isUnlocked ? 0 : 20)
+                                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isUnlocked)
+                                    .disabled(!isUnlocked)
+
+                                    if !isUnlocked {
+                                        VStack(spacing: 12) {
+                                            Image(systemName: "lock.shield.fill")
+                                                .font(.system(size: 36))
+                                                .foregroundColor(.accentColor)
+                                                .symbolEffect(.bounce.up, value: isUnlocked)
+                                            Text("Click to Reveal")
+                                                .font(.headline)
+                                                .foregroundColor(.primary)
+                                        }
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                        .background(.black.opacity(0.15))
+                                        .cornerRadius(20)
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            authenticateUser()
+                                        }
+                                        .transition(.opacity.combined(with: .scale))
+                                    }
+                                }
+                            } else {
+                                ProgressView("Generating QR…")
+                                    .frame(width: 100, height: 100)
                             }
                         }
+                        .frame(width: 280)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding()
+                        .glassBoxIfAvailable(radius: 24)
 
                         HStack(spacing: 24) {
                             HStack(spacing: 6) {
@@ -209,8 +245,6 @@ struct ScannerView: View {
                                      .transition(.scale.combined(with: .opacity))
                                  }
                              }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
                             .padding(.bottom, showQR ? 0 : 16)
                         }
                         .scrollClipDisabled()
@@ -229,6 +263,8 @@ struct ScannerView: View {
             // UDP Discovery is now managed globally in App/AppDelegate
         }
         .onDisappear {
+            unlockTimer?.invalidate()
+            unlockTimer = nil
             // UDP Discovery is now managed globally in App/AppDelegate
         }
 
@@ -307,6 +343,42 @@ struct ScannerView: View {
         }
     }
 
+
+    private func authenticateUser() {
+        let context = LAContext()
+        var error: NSError?
+        
+        if context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) {
+            let reason = "Authenticate to reveal connection credentials"
+            context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, authenticationError in
+                DispatchQueue.main.async {
+                    if success {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            isUnlocked = true
+                        }
+                        
+                        unlockTimer?.invalidate()
+                        unlockTimer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: false) { _ in
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                isUnlocked = false
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // Fallback if no auth policy is available
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                isUnlocked = true
+            }
+            unlockTimer?.invalidate()
+            unlockTimer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: false) { _ in
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    isUnlocked = false
+                }
+            }
+        }
+    }
 
     private func copyToClipboard(_ text: String) {
         let pasteboard = NSPasteboard.general
