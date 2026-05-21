@@ -1,6 +1,7 @@
 {
   "app.name": "AirSync",
   "menu.mirror": "Mirroring",
+  "menu.browseFiles": "Browse Files",
   "menu.about": "Informazioni su AirSync",
   "menu.checkUpdates": "Verifica disponibilità aggiornamenti…",
   "menu.quit": "Chiudi",
@@ -61,5 +62,8 @@
   "quickshare.n_files": "%d file",
   "quickshare.drop.send_to": "Invia a %@",
   "quickshare.drop.pick_device": "Seleziona un destinatario",
-  "settings.quickshare": "Quick Share"
+  "settings.quickshare": "Quick Share and Files",
+  "settings.fileAccess.title": "File Access",
+  "settings.fileAccess.enabled": "Enable File Access",
+  "settings.fileAccess.description": "Mount your Android device storage as a local drive in macOS Finder automatically."
 }
