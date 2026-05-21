@@ -59,7 +59,8 @@ class AppState: ObservableObject {
         self.quickShareEnabled = UserDefaults.standard.object(forKey: "quickShareEnabled") == nil ? true : UserDefaults.standard.bool(forKey: "quickShareEnabled")
         self.isFileAccessEnabled = UserDefaults.standard.object(forKey: "isFileAccessEnabled") == nil ? true : UserDefaults.standard.bool(forKey: "isFileAccessEnabled")
         self.popupSharedImages = UserDefaults.standard.object(forKey: "popupSharedImages") == nil ? true : UserDefaults.standard.bool(forKey: "popupSharedImages")
-        self.dontDismissSharedImagePopups = UserDefaults.standard.bool(forKey: "dontDismissSharedImagePopups")
+        let limit = UserDefaults.standard.integer(forKey: "sharedImagePopupsLimit")
+        self.sharedImagePopupsLimit = limit == 0 ? 3 : limit
         self.popupSharedImagesOnLeft = UserDefaults.standard.bool(forKey: "popupSharedImagesOnLeft")
 
         let savedNotificationMode = UserDefaults.standard.string(forKey: "callNotificationMode") ?? CallNotificationMode.popup.rawValue
@@ -439,9 +440,9 @@ class AppState: ObservableObject {
         }
     }
 
-    @Published var dontDismissSharedImagePopups: Bool {
+    @Published var sharedImagePopupsLimit: Int {
         didSet {
-            UserDefaults.standard.set(dontDismissSharedImagePopups, forKey: "dontDismissSharedImagePopups")
+            UserDefaults.standard.set(sharedImagePopupsLimit, forKey: "sharedImagePopupsLimit")
         }
     }
 

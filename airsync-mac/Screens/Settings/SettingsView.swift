@@ -163,13 +163,30 @@ struct SettingsView: View {
                         }
 
                         if appState.popupSharedImages {
-                            HStack {
-                                Label(Localizer.shared.text("quickshare.settings.dontDismissPopups"), systemImage: "timer.slash")
-                                    .padding(.leading, 12)
-                                Spacer()
-                                Toggle("", isOn: $appState.dontDismissSharedImagePopups)
-                                    .toggleStyle(.switch)
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Label(Localizer.shared.text("quickshare.settings.maxPopups"), systemImage: "square.3.stack.3d")
+                                        .padding(.leading, 12)
+                                    Spacer()
+                                    HStack(spacing: 8) {
+                                        Text("\(appState.sharedImagePopupsLimit)")
+                                            .font(.system(.body, design: .monospaced))
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(.secondary)
+                                            .frame(width: 24, alignment: .trailing)
+                                        Slider(
+                                            value: Binding(
+                                                get: { Double(appState.sharedImagePopupsLimit) },
+                                                set: { appState.sharedImagePopupsLimit = Int(round($0)) }
+                                            ),
+                                            in: 1...10,
+                                            step: 1
+                                        )
+                                        .frame(width: 120)
+                                    }
+                                }
                             }
+                            .padding(.bottom, 4)
 
                             HStack {
                                 Label(Localizer.shared.text("quickshare.settings.popupSide"), systemImage: "macwindow.and.ipad.arrow.left")

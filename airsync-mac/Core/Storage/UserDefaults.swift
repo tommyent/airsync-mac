@@ -30,7 +30,7 @@ extension UserDefaults {
         static let isMusicCardHidden = "isMusicCardHidden"
         static let lastOnboarding = "lastOnboarding"
         static let popupSharedImages = "popupSharedImages"
-        static let dontDismissSharedImagePopups = "dontDismissSharedImagePopups"
+        static let sharedImagePopupsLimit = "sharedImagePopupsLimit"
         static let popupSharedImagesOnLeft = "popupSharedImagesOnLeft"
 
         static let notificationStacks = "notificationStacks"
@@ -155,9 +155,12 @@ extension UserDefaults {
         set { set(newValue, forKey: Keys.popupSharedImages) }
     }
 
-    var dontDismissSharedImagePopups: Bool {
-        get { bool(forKey: Keys.dontDismissSharedImagePopups) }
-        set { set(newValue, forKey: Keys.dontDismissSharedImagePopups) }
+    var sharedImagePopupsLimit: Int {
+        get {
+            let val = integer(forKey: Keys.sharedImagePopupsLimit)
+            return val == 0 ? 3 : val
+        }
+        set { set(newValue, forKey: Keys.sharedImagePopupsLimit) }
     }
 
     var popupSharedImagesOnLeft: Bool {

@@ -215,19 +215,17 @@ public class SharedImagePopupManager: NSObject, ObservableObject {
     }
 
     public func show(fileURL: URL) {
-        let dontDismiss = AppState.shared.dontDismissSharedImagePopups
+        let limit = AppState.shared.sharedImagePopupsLimit
 
-        if !dontDismiss {
-            self.activeImages.removeAll()
-            self.cancelTimer()
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+            while self.activeImages.count >= limit {
+                self.activeImages.removeFirst()
+            }
+            let newImage = SharedImageInfo(fileURL: fileURL)
+            self.activeImages.append(newImage)
         }
 
-        let newImage = SharedImageInfo(fileURL: fileURL)
-        self.activeImages.append(newImage)
-
-        if !dontDismiss {
-            self.resetTimer()
-        }
+        self.resetTimer()
 
         if self.window == nil {
             let windowWidth: CGFloat = 300
