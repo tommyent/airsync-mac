@@ -90,6 +90,13 @@ struct SyncSettingsView: View {
                             }
                     }
 
+                    HStack {
+                        Label("Fallback to mdns services", systemImage: "antenna.radiowaves.left.and.right")
+                        Spacer()
+                        Toggle("", isOn: $appState.fallbackToMdns)
+                            .toggleStyle(.switch)
+                    }
+
                     if let result = appState.adbConnectionResult {
                         VStack(alignment: .leading, spacing: 6) {
                             ExpandableLicenseSection(title: "ADB Console", content: "[" + (UserDefaults.standard.lastADBCommand ?? "[]") + "] " + result, copyable: true)
