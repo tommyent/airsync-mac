@@ -18,10 +18,11 @@ struct SettingsFeaturesView: View {
     @AppStorage("manualPosition") private var manualPosition = false
     @AppStorage("continueApp") private var continueApp = false
     @AppStorage("directKeyInput") private var directKeyInput = true
-    @AppStorage("syncAndroidPlaybackSeekbar") private var syncAndroidPlaybackSeekbar = false
+    @AppStorage("showInControlCenter") private var showInControlCenter = false
     @AppStorage("scrcpyDesktopDpi") private var scrcpyDesktopDpi = ""
 
     @State private var showingPlusPopover = false
+    @State private var showControlCenterInfo = false
     @State private var tempBitrate: Double = 4.00
     @State private var tempResolution: Double = 1200.00
     @State private var isDragging = false
@@ -355,19 +356,25 @@ struct SettingsFeaturesView: View {
                 SettingsToggleView(name: "Send now playing status", icon: "play.circle", isOn: $appState.sendNowPlayingStatus)
 
                 HStack {
-                    Label("Sync Android playback seekbar", systemImage: "slider.horizontal.below.rectangle")
-                    Button(action: {}) {
+                    Label("Show in Control Center", systemImage: "slider.horizontal.below.rectangle")
+                    Button(action: { showControlCenterInfo = true }) {
                         Image(systemName: "info.circle")
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
-                    .help("Publishes Android media info (track, artist, artwork, seekbar position) to macOS Now Playing / boringNotch by playing a silent audio loop in the background.\n\nⓘ Multipoint Bluetooth users: this may cause your headphones to switch audio focus to the Mac, interrupting Android audio. Disable this toggle if that happens.")
+                    .alert("Show in Control Center", isPresented: $showControlCenterInfo) {
+                        Button("OK", role: .cancel) {}
+                    } message: {
+                        Text("This feature plays a silent audio track in background in order to show up in macOS media. This may prevent your multi-device bluetooth audio devices to not switch correctly.")
+                    }
                     Spacer()
-                    Toggle("", isOn: $syncAndroidPlaybackSeekbar)
+                    Toggle("", isOn: $showInControlCenter)
                         .toggleStyle(.switch)
-                        .onChange(of: syncAndroidPlaybackSeekbar) { _, enabled in
-                            if !enabled {
-                                NowPlayingPublisher.shared.clear()
+                        .onChange(of: showInControlCenter) { _, enabled in
+                            if enabled {
+                                NowPlayingPublisher.shared.enableSilentAudio()
+                            } else {
+                                NowPlayingPublisher.shared.disableSilentAudio()
                             }
                         }
                 }

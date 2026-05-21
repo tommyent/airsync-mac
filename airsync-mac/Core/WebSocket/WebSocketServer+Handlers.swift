@@ -319,10 +319,10 @@ extension WebSocketServer {
                 }
             }
 
-            // Publish Android now-playing info to MPNowPlayingInfoCenter only when
-            // the user has opted in, because this requires playing silent audio which
-            // causes multipoint Bluetooth headphones to route audio to the Mac.
-            if UserDefaults.standard.syncAndroidPlaybackSeekbar {
+            // Only publish to macOS Control Center / boringNotch when the user opts in,
+            // because it requires a silent background audio track which can cause multipoint
+            // Bluetooth headphones to route audio focus to the Mac.
+            if UserDefaults.standard.showInControlCenter {
                 var npInfo = NowPlayingInfo()
                 npInfo.title = title
                 npInfo.artist = artist

@@ -58,10 +58,9 @@ private struct MediaSeekbarView: View {
 struct MediaPlayerView: View {
     var music: DeviceStatus.Music
     @State private var showingPlusPopover = false
-    @AppStorage("syncAndroidPlaybackSeekbar") private var syncSeekbar: Bool = false
 
     private var hasSeekbar: Bool {
-        music.duration > 0 && syncSeekbar
+        music.duration > 0
     }
 
     var body: some View {

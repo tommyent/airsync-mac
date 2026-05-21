@@ -26,6 +26,7 @@ extension UserDefaults {
         static let directKeyInput = "directKeyInput"
         static let sendNowPlayingStatus = "sendNowPlayingStatus"
         static let syncAndroidPlaybackSeekbar = "syncAndroidPlaybackSeekbar"
+        static let showInControlCenter = "showInControlCenter"
         static let isMusicCardHidden = "isMusicCardHidden"
         static let lastOnboarding = "lastOnboarding"
 
@@ -132,6 +133,13 @@ extension UserDefaults {
     var syncAndroidPlaybackSeekbar: Bool {
         get { bool(forKey: Keys.syncAndroidPlaybackSeekbar) }
         set { set(newValue, forKey: Keys.syncAndroidPlaybackSeekbar) }
+    }
+
+    /// Controls whether Android media info is published to macOS Control Center / boringNotch
+    /// via a silent background audio track. Off by default due to Bluetooth multipoint side-effects.
+    var showInControlCenter: Bool {
+        get { bool(forKey: Keys.showInControlCenter) }
+        set { set(newValue, forKey: Keys.showInControlCenter) }
     }
 
     var isMusicCardHidden: Bool {

@@ -39,14 +39,20 @@ final class NowPlayingPublisher {
 
     // MARK: - Public API
 
-    /// Call once at app startup. Sets up remote commands and starts silent audio.
+    /// Call once at app startup. Registers remote commands only.
+    /// Silent audio is started/stopped separately based on the showInControlCenter setting.
     func start() {
         registerRemoteCommands()
-        // Start silent audio immediately so the app is ALWAYS audio-eligible.
-        // If we wait until the first play command, macOS sees us publish
-        // MPNowPlayingInfoCenter data without backing audio and fires a pauseCommand
-        // to "correct" the state — which is the root cause of the glitch loop.
+    }
+
+    /// Starts silent audio if not already running (called when showInControlCenter is enabled).
+    func enableSilentAudio() {
         startSilentAudio()
+    }
+
+    /// Stops silent audio and clears Now Playing info (called when showInControlCenter is disabled).
+    func disableSilentAudio() {
+        clear()
     }
 
     /// Update now-playing with Android media info.
@@ -72,7 +78,7 @@ final class NowPlayingPublisher {
     /// Clear now-playing info (e.g., Android disconnected)
     func clear() {
         currentInfo = nil
-        stopSilentAudio()  // Only place we stop the engine
+        stopSilentAudio()
         DispatchQueue.main.async {
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
             MPNowPlayingInfoCenter.default().playbackState = .stopped
@@ -81,7 +87,7 @@ final class NowPlayingPublisher {
 
     // MARK: - Silent Audio
 
-    private func startSilentAudio() {
+    func startSilentAudio() {
         guard !isSilentAudioRunning else { return }
         isSilentAudioRunning = true
 
@@ -120,7 +126,7 @@ final class NowPlayingPublisher {
         print("[NowPlayingPublisher] Silent audio engine started — app is now audio-eligible")
     }
 
-    private func stopSilentAudio() {
+    func stopSilentAudio() {
         guard isSilentAudioRunning else { return }
         playerNode?.stop()
         audioEngine?.stop()
