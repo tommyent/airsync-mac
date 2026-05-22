@@ -94,5 +94,6 @@
   "settings.mirroring.x": "x",
   "settings.mirroring.y": "y",
   "settings.mirroring.set": "Set",
-  "settings.mirroring.plusFeatureMessage": "App Mirroring is an AirSync+ feature"
+  "settings.mirroring.plusFeatureMessage": "App Mirroring is an AirSync+ feature",
+  "quickshare.copy": "Copy to clipboard"
 }
