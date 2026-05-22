@@ -76,5 +76,9 @@
   "settings.menubar.color.gray": "Grau",
   "settings.menubar.color.accent": "System-Akzent",
   "settings.menubar.showPillStroke": "Rahmen um Menüleisten-Container",
-  "settings.menubar.showRecentNotifIcons": "Symbole kürzlicher Benachrichtigungen anzeigen"
+  "settings.menubar.showRecentNotifIcons": "Symbole kürzlicher Benachrichtigungen anzeigen",
+  "settings.menubar.batteryStyle": "Batteriestil",
+  "settings.menubar.batteryStyle.both": "Sowohl Symbol als auch Prozent",
+  "settings.menubar.batteryStyle.icon": "Nur Symbol",
+  "settings.menubar.batteryStyle.percentage": "Nur Prozent"
 }

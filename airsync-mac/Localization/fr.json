@@ -76,5 +76,9 @@
   "settings.menubar.color.gray": "Gris",
   "settings.menubar.color.accent": "Accentuation du système",
   "settings.menubar.showPillStroke": "Bordure de pilule du conteneur",
-  "settings.menubar.showRecentNotifIcons": "Afficher les icônes de notification récentes"
+  "settings.menubar.showRecentNotifIcons": "Afficher les icônes de notification récentes",
+  "settings.menubar.batteryStyle": "Style de batterie",
+  "settings.menubar.batteryStyle.both": "Icône et pourcentage",
+  "settings.menubar.batteryStyle.icon": "Icône uniquement",
+  "settings.menubar.batteryStyle.percentage": "Pourcentage uniquement"
 }

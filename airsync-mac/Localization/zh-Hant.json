@@ -76,5 +76,9 @@
   "settings.menubar.color.gray": "Gray",
   "settings.menubar.color.accent": "System Accent",
   "settings.menubar.showPillStroke": "Container Pill Border",
-  "settings.menubar.showRecentNotifIcons": "顯示最近的通知圖標"
+  "settings.menubar.showRecentNotifIcons": "顯示最近的通知圖標",
+  "settings.menubar.batteryStyle": "電池顯示樣式",
+  "settings.menubar.batteryStyle.both": "圖標與百分比",
+  "settings.menubar.batteryStyle.icon": "僅圖標",
+  "settings.menubar.batteryStyle.percentage": "僅百分比"
 }

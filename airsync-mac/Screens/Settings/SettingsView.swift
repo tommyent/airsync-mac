@@ -298,10 +298,14 @@ struct SettingsView: View {
                     Divider()
 
                     HStack {
-                        Label(L("settings.menubar.showBattery"), systemImage: "battery.100")
+                        Label(L("settings.menubar.batteryStyle"), systemImage: "battery.100")
                         Spacer()
-                        Toggle("", isOn: $appState.showMenubarBatteryIcon)
-                            .toggleStyle(.switch)
+                        Picker("", selection: $appState.menubarBatteryStyle) {
+                            Text(L("settings.menubar.batteryStyle.both")).tag("both")
+                            Text(L("settings.menubar.batteryStyle.icon")).tag("icon")
+                            Text(L("settings.menubar.batteryStyle.percentage")).tag("percentage")
+                        }
+                        .pickerStyle(MenuPickerStyle())
                     }
 
                     HStack {
@@ -362,7 +366,7 @@ struct SettingsView: View {
             .padding()
             .animation(.spring(), value: appState.showMenubarText)
             .animation(.spring(), value: appState.showMenubarIcon)
-            .animation(.spring(), value: appState.showMenubarBatteryIcon)
+            .animation(.spring(), value: appState.menubarBatteryStyle)
             .animation(.spring(), value: appState.showMenubarMusicIcon)
             .animation(.spring(), value: appState.showMenubarPillStroke)
             .animation(.spring(), value: appState.showMenubarRecentNotifIcons)

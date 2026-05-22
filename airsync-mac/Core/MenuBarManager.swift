@@ -87,7 +87,7 @@ class MenuBarManager: NSObject {
         ]
         
         let group2: [AnyPublisher<Void, Never>] = [
-            appState.$showMenubarBatteryIcon.map { _ in () }.eraseToAnyPublisher(),
+            appState.$menubarBatteryStyle.map { _ in () }.eraseToAnyPublisher(),
             appState.$showMenubarMusicIcon.map { _ in () }.eraseToAnyPublisher(),
             appState.$menubarUnreadBadgeStyle.map { _ in () }.eraseToAnyPublisher(),
             appState.$menubarUnreadBadgeColor.map { _ in () }.eraseToAnyPublisher(),
@@ -364,19 +364,22 @@ struct MenubarStatusView: View {
                                 
                                 // Battery
                                 if let battery = appState.status?.battery {
+                                    let style = appState.menubarBatteryStyle
                                     HStack(spacing: 3) {
                                         if appState.showMenubarDeviceName {
                                             Text("•")
                                                 .foregroundColor(.secondary)
                                         }
                                         
-                                        if appState.showMenubarBatteryIcon {
+                                        if style == "icon" || style == "both" {
                                             Image(systemName: getBatteryIconName(level: battery.level, isCharging: battery.isCharging))
                                                 .foregroundColor(batteryColor(level: battery.level, isCharging: battery.isCharging))
                                         }
                                         
-                                        Text("\(battery.level)%")
-                                            .font(.system(size: 11, design: .monospaced))
+                                        if style == "percentage" || style == "both" {
+                                            Text("\(battery.level)%")
+                                                .font(.system(size: 11, design: .monospaced))
+                                        }
                                     }
                                 }
                             }
@@ -452,13 +455,13 @@ struct MenubarStatusView: View {
     private func getBatteryIconName(level: Int, isCharging: Bool) -> String {
         if isCharging {
             return "battery.100.bolt"
-        } else if level >= 90 {
+        } else if level >= 88 {
             return "battery.100"
-        } else if level >= 65 {
+        } else if level >= 62 {
             return "battery.75"
-        } else if level >= 35 {
+        } else if level >= 38 {
             return "battery.50"
-        } else if level >= 15 {
+        } else if level >= 12 {
             return "battery.25"
         } else {
             return "battery.0"

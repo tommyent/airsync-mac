@@ -48,7 +48,7 @@ class AppState: ObservableObject {
         self.menubarTextMaxLength = savedMaxLength > 0 ? savedMaxLength : 30
 
         self.showMenubarIcon = UserDefaults.standard.object(forKey: "showMenubarIcon") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarIcon")
-        self.showMenubarBatteryIcon = UserDefaults.standard.object(forKey: "showMenubarBatteryIcon") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarBatteryIcon")
+        self.menubarBatteryStyle = UserDefaults.standard.string(forKey: "menubarBatteryStyle") ?? "both"
         self.showMenubarMusicIcon = UserDefaults.standard.object(forKey: "showMenubarMusicIcon") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarMusicIcon")
         self.menubarUnreadBadgeStyle = UserDefaults.standard.string(forKey: "menubarUnreadBadgeStyle") ?? "badge"
         self.menubarUnreadBadgeColor = UserDefaults.standard.string(forKey: "menubarUnreadBadgeColor") ?? "accent"
@@ -295,9 +295,9 @@ class AppState: ObservableObject {
         }
     }
 
-    @Published var showMenubarBatteryIcon: Bool {
+    @Published var menubarBatteryStyle: String {
         didSet {
-            UserDefaults.standard.set(showMenubarBatteryIcon, forKey: "showMenubarBatteryIcon")
+            UserDefaults.standard.set(menubarBatteryStyle, forKey: "menubarBatteryStyle")
         }
     }
 

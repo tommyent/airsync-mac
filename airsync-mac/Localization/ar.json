@@ -76,5 +76,9 @@
   "settings.menubar.color.gray": "Gray",
   "settings.menubar.color.accent": "System Accent",
   "settings.menubar.showPillStroke": "Container Pill Border",
-  "settings.menubar.showRecentNotifIcons": "Show recent notification icons"
+  "settings.menubar.showRecentNotifIcons": "Show recent notification icons",
+  "settings.menubar.batteryStyle": "Battery Style",
+  "settings.menubar.batteryStyle.both": "Both Icon & Percentage",
+  "settings.menubar.batteryStyle.icon": "Icon Only",
+  "settings.menubar.batteryStyle.percentage": "Percentage Only"
 }
