@@ -509,18 +509,38 @@ struct SharedImageCardView: View {
             )
             .frame(width: cardWidth, height: cardHeight)
 
-            // Close button — above drag layer
+            // Action buttons — above drag layer
             if isHovered {
-                Button(action: { onDismiss() }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 18, height: 18)
-                        .background(Color.black.opacity(0.6))
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
+                HStack(spacing: 6) {
+                    Button(action: {
+                        let pasteboard = NSPasteboard.general
+                        pasteboard.clearContents()
+                        pasteboard.writeObjects([image.fileURL as NSURL])
+                        onDismiss()
+                    }) {
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 18, height: 18)
+                            .background(Color.black.opacity(0.6))
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .help(L("quickshare.copy"))
+
+                    Button(action: { onDismiss() }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 18, height: 18)
+                            .background(Color.black.opacity(0.6))
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .help(L("notifications.actions.dismiss"))
                 }
-                .buttonStyle(PlainButtonStyle())
                 .padding(8)
                 .transition(.scale.combined(with: .opacity))
                 .zIndex(10)

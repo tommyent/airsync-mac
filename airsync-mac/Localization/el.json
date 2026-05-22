@@ -55,5 +55,6 @@
   "quickshare.n_files": "%d files",
   "quickshare.drop.send_to": "Send to %@",
   "quickshare.drop.pick_device": "Pick a device to send",
-  "settings.quickshare": "Quick Share"
+  "settings.quickshare": "Quick Share",
+  "quickshare.copy": "Αντιγραφή στο πρόχειρο"
 }

@@ -55,5 +55,6 @@
   "quickshare.n_files": "%d file",
   "quickshare.drop.send_to": "Invia a %@",
   "quickshare.drop.pick_device": "Seleziona un destinatario",
-  "settings.quickshare": "Quick Share"
+  "settings.quickshare": "Quick Share",
+  "quickshare.copy": "Copia negli appunti"
 }

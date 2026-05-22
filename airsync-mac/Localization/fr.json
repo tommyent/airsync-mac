@@ -55,5 +55,6 @@
   "quickshare.n_files": "%d fichiers",
   "quickshare.drop.send_to": "Envoyer à %@",
   "quickshare.drop.pick_device": "Choisissez un appareil auquel envoyer",
-  "settings.quickshare": "Quick Share"
+  "settings.quickshare": "Quick Share",
+  "quickshare.copy": "Copier dans le presse-papiers"
 }
