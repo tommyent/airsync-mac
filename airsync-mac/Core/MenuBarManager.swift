@@ -301,9 +301,7 @@ struct MenubarStatusView: View {
             
             // 1. Primary Icon
             if appState.showMenubarIcon {
-                let iconName = isConnected
-                    ? (appState.notifications.isEmpty ? "iphone.gen3" : "iphone.gen3.radiowaves.left.and.right")
-                    : "iphone.slash"
+                let iconName = isConnected ? "iphone.gen3" : "iphone.slash"
                 Image(systemName: iconName)
                     .imageScale(.medium)
             }
@@ -316,8 +314,10 @@ struct MenubarStatusView: View {
                             .font(.system(size: 12, weight: .medium))
                     } else {
                         HStack(spacing: 5) {
-                            // Music now playing (takes priority or displays next)
-                            if appState.showMenubarMusicIcon, let music = appState.status?.music, music.isPlaying {
+                            // Left part: Device Name or Music Info
+                            let showMusic = appState.showMenubarMusicIcon && (appState.status?.music?.isPlaying ?? false)
+                            
+                            if showMusic, let music = appState.status?.music {
                                 let title = music.title.isEmpty ? "Unknown Title" : music.title
                                 let artist = music.artist.isEmpty ? "Unknown Artist" : music.artist
                                 let musicText = truncate(text: "\(title) - \(artist)")
@@ -334,34 +334,33 @@ struct MenubarStatusView: View {
                                     Text(musicText)
                                         .font(.system(size: 12))
                                 }
-                            } else {
-                                // Device name
-                                if appState.showMenubarDeviceName {
-                                    let deviceName = appState.device?.name ?? (bleManager.isAuthenticated ? bleManager.connectedDeviceName : nil) ?? ""
-                                    if !deviceName.isEmpty {
-                                        Text(truncate(text: deviceName))
-                                            .font(.system(size: 12, weight: .medium))
-                                    }
+                            } else if appState.showMenubarDeviceName {
+                                let deviceName = appState.device?.name ?? (bleManager.isAuthenticated ? bleManager.connectedDeviceName : nil) ?? ""
+                                if !deviceName.isEmpty {
+                                    Text(truncate(text: deviceName))
+                                        .font(.system(size: 12, weight: .medium))
                                 }
-                                
-                                // Battery
-                                if let battery = appState.status?.battery {
-                                    let style = appState.menubarBatteryStyle
-                                    HStack(spacing: 3) {
-                                        if appState.showMenubarDeviceName {
-                                            Text("•")
-                                                .foregroundColor(.secondary)
-                                        }
-                                        
-                                        if style == "icon" || style == "both" {
-                                            Image(systemName: getBatteryIconName(level: battery.level, isCharging: battery.isCharging))
-                                                .foregroundColor(batteryColor(level: battery.level, isCharging: battery.isCharging))
-                                        }
-                                        
-                                        if style == "percentage" || style == "both" {
-                                            Text("\(battery.level)%")
-                                                .font(.system(size: 11, design: .monospaced))
-                                        }
+                            }
+                            
+                            // Right part: Battery
+                            if let battery = appState.status?.battery {
+                                let style = appState.menubarBatteryStyle
+                                HStack(spacing: 3) {
+                                    // Show separator if there was a prefix shown
+                                    let hasPrefix = showMusic || (appState.showMenubarDeviceName && !(appState.device?.name ?? bleManager.connectedDeviceName ?? "").isEmpty)
+                                    if hasPrefix {
+                                        Text("•")
+                                            .foregroundColor(.secondary)
+                                    }
+                                    
+                                    if style == "icon" || style == "both" {
+                                        Image(systemName: getBatteryIconName(level: battery.level, isCharging: battery.isCharging))
+                                            .foregroundColor(batteryColor(level: battery.level, isCharging: battery.isCharging))
+                                    }
+                                    
+                                    if style == "percentage" || style == "both" {
+                                        Text("\(battery.level)%")
+                                            .font(.system(size: 11, design: .monospaced))
                                     }
                                 }
                             }
