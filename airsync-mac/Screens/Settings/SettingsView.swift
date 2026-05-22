@@ -323,41 +323,50 @@ struct SettingsView: View {
                     }
 
                     HStack {
-                        Label(L("settings.menubar.showRecentNotifIcons"), systemImage: "app.badge")
+                        Label(L("settings.menubar.notifications"), systemImage: "bell")
                         Spacer()
-                        Toggle("", isOn: $appState.showMenubarRecentNotifIcons)
-                            .toggleStyle(.switch)
-                    }
-
-                    Divider()
-
-                    HStack {
-                        Label(L("settings.menubar.badgeStyle"), systemImage: "bell.badge")
-                        Spacer()
-                        Picker("", selection: $appState.menubarUnreadBadgeStyle) {
-                            Text(L("settings.menubar.badgeStyle.badge")).tag("badge")
-                            Text(L("settings.menubar.badgeStyle.text")).tag("text")
-                            Text(L("settings.menubar.badgeStyle.none")).tag("none")
+                        Picker("", selection: $appState.menubarNotificationStyle) {
+                            Text(L("settings.menubar.notifications.both")).tag("both")
+                            Text(L("settings.menubar.notifications.count")).tag("count")
+                            Text(L("settings.menubar.notifications.icons")).tag("icons")
+                            Text(L("settings.menubar.notifications.none")).tag("none")
                         }
                         .pickerStyle(MenuPickerStyle())
                     }
 
-                    if appState.menubarUnreadBadgeStyle == "badge" {
+                    if appState.menubarNotificationStyle == "count" || appState.menubarNotificationStyle == "both" {
+                        Divider()
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+
                         HStack {
-                            Label(L("settings.menubar.badgeColor"), systemImage: "paintpalette")
+                            Label(L("settings.menubar.badgeStyle"), systemImage: "bell.badge")
                             Spacer()
-                            Picker("", selection: $appState.menubarUnreadBadgeColor) {
-                                Text(L("settings.menubar.color.accent")).tag("accent")
-                                Text(L("settings.menubar.color.red")).tag("red")
-                                Text(L("settings.menubar.color.orange")).tag("orange")
-                                Text(L("settings.menubar.color.blue")).tag("blue")
-                                Text(L("settings.menubar.color.green")).tag("green")
-                                Text(L("settings.menubar.color.purple")).tag("purple")
-                                Text(L("settings.menubar.color.gray")).tag("gray")
+                            Picker("", selection: $appState.menubarUnreadBadgeStyle) {
+                                Text(L("settings.menubar.badgeStyle.badge")).tag("badge")
+                                Text(L("settings.menubar.badgeStyle.text")).tag("text")
+                                Text(L("settings.menubar.badgeStyle.none")).tag("none")
                             }
                             .pickerStyle(MenuPickerStyle())
                         }
                         .transition(.opacity.combined(with: .move(edge: .top)))
+
+                        if appState.menubarUnreadBadgeStyle == "badge" {
+                            HStack {
+                                Label(L("settings.menubar.badgeColor"), systemImage: "paintpalette")
+                                Spacer()
+                                Picker("", selection: $appState.menubarUnreadBadgeColor) {
+                                    Text(L("settings.menubar.color.accent")).tag("accent")
+                                    Text(L("settings.menubar.color.red")).tag("red")
+                                    Text(L("settings.menubar.color.orange")).tag("orange")
+                                    Text(L("settings.menubar.color.blue")).tag("blue")
+                                    Text(L("settings.menubar.color.green")).tag("green")
+                                    Text(L("settings.menubar.color.purple")).tag("purple")
+                                    Text(L("settings.menubar.color.gray")).tag("gray")
+                                }
+                                .pickerStyle(MenuPickerStyle())
+                            }
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
                     }
                 }
                 .padding()
@@ -369,7 +378,7 @@ struct SettingsView: View {
             .animation(.spring(), value: appState.menubarBatteryStyle)
             .animation(.spring(), value: appState.showMenubarMusicIcon)
             .animation(.spring(), value: appState.showMenubarPillStroke)
-            .animation(.spring(), value: appState.showMenubarRecentNotifIcons)
+            .animation(.spring(), value: appState.menubarNotificationStyle)
             .animation(.spring(), value: appState.menubarUnreadBadgeStyle)
         }
     }

@@ -98,7 +98,7 @@ class MenuBarManager: NSObject {
         let group3: [AnyPublisher<Void, Never>] = [
             appState.$temporaryDragLabel.map { _ in () }.eraseToAnyPublisher(),
             appState.$showMenubarPillStroke.map { _ in () }.eraseToAnyPublisher(),
-            appState.$showMenubarRecentNotifIcons.map { _ in () }.eraseToAnyPublisher(),
+            appState.$menubarNotificationStyle.map { _ in () }.eraseToAnyPublisher(),
             BLECentralManager.shared.$connectionStatus.map { _ in () }.eraseToAnyPublisher(),
             BLECentralManager.shared.$connectedDeviceName.map { _ in () }.eraseToAnyPublisher()
         ]
@@ -309,25 +309,7 @@ struct MenubarStatusView: View {
             }
             
             if isConnected {
-                // 2. Unread Badge
-                let unreadCount = appState.notifications.count
-                if unreadCount > 0 {
-                    if appState.menubarUnreadBadgeStyle == "badge" {
-                        Text("\(unreadCount)")
-                            .font(.system(size: 9, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(badgeColor)
-                            .clipShape(Capsule())
-                    } else if appState.menubarUnreadBadgeStyle == "text" {
-                        Text("\(unreadCount)*")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.secondary)
-                    }
-                }
-                
-                // 3. Status Text / Details
+                // 2. Status Text / Details
                 if appState.showMenubarText {
                     if let dragLabel = appState.temporaryDragLabel {
                         Text(dragLabel)
@@ -386,9 +368,29 @@ struct MenubarStatusView: View {
                         }
                     }
                 }
-
+                
+                // 3. Unread Badge Count
+                if appState.menubarNotificationStyle == "both" || appState.menubarNotificationStyle == "count" {
+                    let unreadCount = appState.notifications.count
+                    if unreadCount > 0 {
+                        if appState.menubarUnreadBadgeStyle == "badge" {
+                            Text("\(unreadCount)")
+                                .font(.system(size: 9, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(badgeColor)
+                                .clipShape(Capsule())
+                        } else if appState.menubarUnreadBadgeStyle == "text" {
+                            Text("\(unreadCount)*")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                
                 // 4. Recent Notification Icons
-                if appState.showMenubarRecentNotifIcons {
+                if appState.menubarNotificationStyle == "both" || appState.menubarNotificationStyle == "icons" {
                     let recentPackages = appState.recentNotifyingPackages
                     if !recentPackages.isEmpty {
                         HStack(spacing: 4) {
@@ -441,12 +443,8 @@ struct MenubarStatusView: View {
     }
     
     private func batteryColor(level: Int, isCharging: Bool) -> Color {
-        if isCharging {
-            return .green
-        } else if level <= 20 {
-            return .red
-        } else if level <= 45 {
-            return .orange
+        if level < 20 {
+            return .yellow
         } else {
             return .primary
         }

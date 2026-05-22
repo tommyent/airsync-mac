@@ -80,5 +80,10 @@
   "settings.menubar.batteryStyle": "バッテリー表示スタイル",
   "settings.menubar.batteryStyle.both": "アイコンとパーセンテージの両方",
   "settings.menubar.batteryStyle.icon": "アイコンのみ",
-  "settings.menubar.batteryStyle.percentage": "パーセンテージのみ"
+  "settings.menubar.batteryStyle.percentage": "パーセンテージのみ",
+  "settings.menubar.notifications": "通知表示スタイル",
+  "settings.menubar.notifications.both": "件数とアイコンの両方",
+  "settings.menubar.notifications.count": "件数のみ",
+  "settings.menubar.notifications.icons": "アイコンのみ",
+  "settings.menubar.notifications.none": "なし"
 }

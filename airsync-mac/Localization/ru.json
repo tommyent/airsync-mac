@@ -80,5 +80,10 @@
   "settings.menubar.batteryStyle": "Стиль батареи",
   "settings.menubar.batteryStyle.both": "И то, и другое",
   "settings.menubar.batteryStyle.icon": "Только значок",
-  "settings.menubar.batteryStyle.percentage": "Только процент"
+  "settings.menubar.batteryStyle.percentage": "Только процент",
+  "settings.menubar.notifications": "Уведомления",
+  "settings.menubar.notifications.both": "И то, и другое",
+  "settings.menubar.notifications.count": "Только количество",
+  "settings.menubar.notifications.icons": "Только значки",
+  "settings.menubar.notifications.none": "Нет"
 }

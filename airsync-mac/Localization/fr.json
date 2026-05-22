@@ -80,5 +80,10 @@
   "settings.menubar.batteryStyle": "Style de batterie",
   "settings.menubar.batteryStyle.both": "Icône et pourcentage",
   "settings.menubar.batteryStyle.icon": "Icône uniquement",
-  "settings.menubar.batteryStyle.percentage": "Pourcentage uniquement"
+  "settings.menubar.batteryStyle.percentage": "Pourcentage uniquement",
+  "settings.menubar.notifications": "Notifications",
+  "settings.menubar.notifications.both": "Nombre et icônes",
+  "settings.menubar.notifications.count": "Nombre uniquement",
+  "settings.menubar.notifications.icons": "Icônes uniquement",
+  "settings.menubar.notifications.none": "Aucune"
 }

@@ -80,5 +80,10 @@
   "settings.menubar.batteryStyle": "电池显示样式",
   "settings.menubar.batteryStyle.both": "图标与百分比",
   "settings.menubar.batteryStyle.icon": "仅图标",
-  "settings.menubar.batteryStyle.percentage": "仅百分比"
+  "settings.menubar.batteryStyle.percentage": "仅百分比",
+  "settings.menubar.notifications": "通知显示样式",
+  "settings.menubar.notifications.both": "计数与图标",
+  "settings.menubar.notifications.count": "仅计数",
+  "settings.menubar.notifications.icons": "仅图标",
+  "settings.menubar.notifications.none": "无"
 }

@@ -53,7 +53,7 @@ class AppState: ObservableObject {
         self.menubarUnreadBadgeStyle = UserDefaults.standard.string(forKey: "menubarUnreadBadgeStyle") ?? "badge"
         self.menubarUnreadBadgeColor = UserDefaults.standard.string(forKey: "menubarUnreadBadgeColor") ?? "accent"
         self.showMenubarPillStroke = UserDefaults.standard.bool(forKey: "showMenubarPillStroke")
-        self.showMenubarRecentNotifIcons = UserDefaults.standard.object(forKey: "showMenubarRecentNotifIcons") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarRecentNotifIcons")
+        self.menubarNotificationStyle = UserDefaults.standard.string(forKey: "menubarNotificationStyle") ?? "both"
 
         self.isClipboardSyncEnabled = UserDefaults.standard.bool(forKey: "isClipboardSyncEnabled")
         self.windowOpacity = UserDefaults.standard.double(forKey: "windowOpacity")
@@ -325,9 +325,9 @@ class AppState: ObservableObject {
         }
     }
 
-    @Published var showMenubarRecentNotifIcons: Bool {
+    @Published var menubarNotificationStyle: String {
         didSet {
-            UserDefaults.standard.set(showMenubarRecentNotifIcons, forKey: "showMenubarRecentNotifIcons")
+            UserDefaults.standard.set(menubarNotificationStyle, forKey: "menubarNotificationStyle")
         }
     }
 

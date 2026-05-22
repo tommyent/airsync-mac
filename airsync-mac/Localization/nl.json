@@ -80,5 +80,10 @@
   "settings.menubar.batteryStyle": "Batterijstijl",
   "settings.menubar.batteryStyle.both": "Beide (Pictogram en Percentage)",
   "settings.menubar.batteryStyle.icon": "Alleen pictogram",
-  "settings.menubar.batteryStyle.percentage": "Alleen percentage"
+  "settings.menubar.batteryStyle.percentage": "Alleen percentage",
+  "settings.menubar.notifications": "Meldingen",
+  "settings.menubar.notifications.both": "Beide (Aantal en Pictogrammen)",
+  "settings.menubar.notifications.count": "Alleen aantal",
+  "settings.menubar.notifications.icons": "Alleen pictogrammen",
+  "settings.menubar.notifications.none": "Geen"
 }
