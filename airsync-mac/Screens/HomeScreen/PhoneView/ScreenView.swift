@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 struct ScreenView: View {
     @ObservedObject var appState = AppState.shared
@@ -35,11 +36,10 @@ struct ScreenView: View {
 
 
             if appState.device != nil {
-
                 HStack(spacing: 10){
                     GlassButtonView(
                         label: "Send",
-                        systemImage: "paperplane.fill",
+                        systemImage: "square.and.arrow.up",
                         iconOnly: appState.adbConnected,
                         action: {
                             let panel = NSOpenPanel()
@@ -81,57 +81,26 @@ struct ScreenView: View {
                         PlusFeaturePopover(message: "Browse files with AirSync+")
                     }
 
-
-                    if appState.adbConnected{
-                        GlassButtonView(
-                            label: "Mirror",
-                            systemImage: "apps.iphone",
-                            action: {
-                                if appState.useNativeMirroringByDefault {
-                                    appState.isNativeMirroring = true
-                                } else {
-                                    ADBConnector.startScrcpy(
-                                        ip: appState.device?.ipAddress ?? "",
-                                        port: appState.adbPort,
-                                        deviceName: appState.device?.name ?? "My Phone"
-                                    )
-                                }
-                            }
-                        )
-                        .transition(.identity)
-                        .keyboardShortcut(
-                            "p",
-                            modifiers: .command
-                        )
-                        .contextMenu {
-                            if appState.useNativeMirroringByDefault {
-                                Button("scrcpy Mirror") {
-                                    ADBConnector.startScrcpy(
-                                        ip: appState.device?.ipAddress ?? "",
-                                        port: appState.adbPort,
-                                        deviceName: appState.device?.name ?? "My Phone"
-                                    )
-                                }
-                            } else {
-                                Button("Android Mirror") {
-                                    appState.isNativeMirroring = true
-                                }
-                            }
-                            
-                            Button("Desktop Mode") {
-                                ADBConnector.startScrcpy(
-                                    ip: appState.device?.ipAddress ?? "",
-                                    port: appState.adbPort,
-                                    deviceName: appState.device?.name ?? "My Phone",
-                                    desktop: true
-                                )
-                            }
+                    GlassButtonView(
+                        label: "Mute",
+                        systemImage: appState.silenceAllNotifications ? "bell.slash.fill" : "bell.badge",
+                        iconOnly: appState.adbConnected,
+                        action: {
+                            appState.silenceAllNotifications.toggle()
                         }
-                        .keyboardShortcut(
-                            "p",
-                            modifiers: [.command, .shift]
-                        )
-                    }
+                    )
+                    .transition(.identity)
+
+                    GlassButtonView(
+                        label: "Clipboard",
+                        systemImage: "clipboard",
+                        iconOnly: true,
+                        action: {
+                            sendClipboard()
+                        }
+                    )
+                    .transition(.identity)
+
                 }
             }
             if (appState.status != nil){
@@ -150,6 +119,30 @@ struct ScreenView: View {
             .easeInOut(duration: 0.28),
             value: appState.isMusicCardHidden
         )
+    }
+
+    private func sendClipboard() {
+        let pasteboard = NSPasteboard.general
+        if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], let firstUrl = urls.first {
+            DispatchQueue.global(qos: .userInitiated).async {
+                WebSocketServer.shared.sendFile(url: firstUrl, isClipboard: true)
+            }
+        } else if let image = NSImage(pasteboard: pasteboard) {
+            let tempDir = FileManager.default.temporaryDirectory
+            let tempUrl = tempDir.appendingPathComponent("clipboard_image_\(Int(Date().timeIntervalSince1970)).png")
+            if let tiffData = image.tiffRepresentation,
+               let bitmap = NSBitmapImageRep(data: tiffData),
+               let pngData = bitmap.representation(using: .png, properties: [:]) {
+                do {
+                    try pngData.write(to: tempUrl)
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        WebSocketServer.shared.sendFile(url: tempUrl, isClipboard: true)
+                    }
+                } catch {
+                    print("[ScreenView] Failed to save clipboard image: \(error)")
+                }
+            }
+        }
     }
 }
 
