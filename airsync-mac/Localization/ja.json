@@ -62,7 +62,7 @@
   "settings.menubar.maxLength": "Max Length",
   "settings.menubar.showDeviceName": "Show Device Name",
   "settings.menubar.showBattery": "Show Battery Icon",
-  "settings.menubar.showMusic": "Show Music Now Playing",
+  "settings.menubar.showMusic": "再生中",
   "settings.menubar.badgeStyle": "Unread Badge Style",
   "settings.menubar.badgeStyle.badge": "Standard Badge",
   "settings.menubar.badgeStyle.text": "Simple Text",
@@ -85,5 +85,6 @@
   "settings.menubar.notifications.both": "件数とアイコンの両方",
   "settings.menubar.notifications.count": "件数のみ",
   "settings.menubar.notifications.icons": "アイコンのみ",
-  "settings.menubar.notifications.none": "なし"
+  "settings.menubar.notifications.none": "なし",
+  "settings.menubar.showAlbumArt": "アルバムアートを表示"
 }

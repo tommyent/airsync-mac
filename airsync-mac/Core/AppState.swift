@@ -50,6 +50,7 @@ class AppState: ObservableObject {
         self.showMenubarIcon = UserDefaults.standard.object(forKey: "showMenubarIcon") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarIcon")
         self.menubarBatteryStyle = UserDefaults.standard.string(forKey: "menubarBatteryStyle") ?? "both"
         self.showMenubarMusicIcon = UserDefaults.standard.object(forKey: "showMenubarMusicIcon") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarMusicIcon")
+        self.showMenubarAlbumArt = UserDefaults.standard.object(forKey: "showMenubarAlbumArt") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarAlbumArt")
         self.menubarUnreadBadgeStyle = UserDefaults.standard.string(forKey: "menubarUnreadBadgeStyle") ?? "badge"
         self.menubarUnreadBadgeColor = UserDefaults.standard.string(forKey: "menubarUnreadBadgeColor") ?? "accent"
         self.showMenubarPillStroke = UserDefaults.standard.bool(forKey: "showMenubarPillStroke")
@@ -304,6 +305,12 @@ class AppState: ObservableObject {
     @Published var showMenubarMusicIcon: Bool {
         didSet {
             UserDefaults.standard.set(showMenubarMusicIcon, forKey: "showMenubarMusicIcon")
+        }
+    }
+
+    @Published var showMenubarAlbumArt: Bool {
+        didSet {
+            UserDefaults.standard.set(showMenubarAlbumArt, forKey: "showMenubarAlbumArt")
         }
     }
 

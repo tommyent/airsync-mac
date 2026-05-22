@@ -62,7 +62,7 @@
   "settings.menubar.maxLength": "Max Length",
   "settings.menubar.showDeviceName": "Show Device Name",
   "settings.menubar.showBattery": "Show Battery Icon",
-  "settings.menubar.showMusic": "Show Music Now Playing",
+  "settings.menubar.showMusic": "正在播放",
   "settings.menubar.badgeStyle": "Unread Badge Style",
   "settings.menubar.badgeStyle.badge": "Standard Badge",
   "settings.menubar.badgeStyle.text": "Simple Text",
@@ -85,5 +85,6 @@
   "settings.menubar.notifications.both": "计数与图标",
   "settings.menubar.notifications.count": "仅计数",
   "settings.menubar.notifications.icons": "仅图标",
-  "settings.menubar.notifications.none": "无"
+  "settings.menubar.notifications.none": "无",
+  "settings.menubar.showAlbumArt": "显示专辑封面"
 }

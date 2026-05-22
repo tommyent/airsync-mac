@@ -89,6 +89,7 @@ class MenuBarManager: NSObject {
         let group2: [AnyPublisher<Void, Never>] = [
             appState.$menubarBatteryStyle.map { _ in () }.eraseToAnyPublisher(),
             appState.$showMenubarMusicIcon.map { _ in () }.eraseToAnyPublisher(),
+            appState.$showMenubarAlbumArt.map { _ in () }.eraseToAnyPublisher(),
             appState.$menubarUnreadBadgeStyle.map { _ in () }.eraseToAnyPublisher(),
             appState.$menubarUnreadBadgeColor.map { _ in () }.eraseToAnyPublisher(),
             appState.$showMenubarDeviceName.map { _ in () }.eraseToAnyPublisher(),
@@ -323,14 +324,19 @@ struct MenubarStatusView: View {
                                 let musicText = truncate(text: "\(title) - \(artist)")
                                 
                                 HStack(spacing: 3) {
-                                    Image(systemName: "music.note")
-                                        .foregroundColor(.accentColor)
-                                        .opacity(musicPulse ? 0.6 : 1.0)
-                                        .onAppear {
-                                            withAnimation(Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-                                                musicPulse = true
-                                            }
-                                        }
+                                    if appState.showMenubarAlbumArt,
+                                       !music.albumArt.isEmpty,
+                                       let data = Data(base64Encoded: music.albumArt.stripBase64Prefix()) ?? Data(base64Encoded: music.albumArt),
+                                       let nsImage = NSImage(data: data) {
+                                        Image(nsImage: nsImage)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(width: 14, height: 14)
+                                            .clipShape(RoundedRectangle(cornerRadius: 3))
+                                    } else {
+                                        Image(systemName: "music.note")
+                                            .foregroundColor(.accentColor)
+                                    }
                                     Text(musicText)
                                         .font(.system(size: 12))
                                 }
@@ -426,7 +432,7 @@ struct MenubarStatusView: View {
         )
     }
     
-    @State private var musicPulse = false
+    
     
     private var badgeColor: Color {
         switch appState.menubarUnreadBadgeColor {

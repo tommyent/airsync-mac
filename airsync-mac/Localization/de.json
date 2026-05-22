@@ -62,7 +62,7 @@
   "settings.menubar.maxLength": "Maximale Länge",
   "settings.menubar.showDeviceName": "Gerätenamen anzeigen",
   "settings.menubar.showBattery": "Batteriesymbol anzeigen",
-  "settings.menubar.showMusic": "Aktuelle Musik anzeigen",
+  "settings.menubar.showMusic": "Jetzt läuft",
   "settings.menubar.badgeStyle": "Stil für ungelesene Mitteilungen",
   "settings.menubar.badgeStyle.badge": "Standard-Badge",
   "settings.menubar.badgeStyle.text": "Einfacher Text",
@@ -85,5 +85,6 @@
   "settings.menubar.notifications.both": "Sowohl Anzahl als auch Symbole",
   "settings.menubar.notifications.count": "Nur Anzahl",
   "settings.menubar.notifications.icons": "Nur Symbole",
-  "settings.menubar.notifications.none": "Keine"
+  "settings.menubar.notifications.none": "Keine",
+  "settings.menubar.showAlbumArt": "Album-Cover anzeigen"
 }

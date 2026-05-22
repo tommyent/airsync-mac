@@ -62,7 +62,7 @@
   "settings.menubar.maxLength": "Max Length",
   "settings.menubar.showDeviceName": "Show Device Name",
   "settings.menubar.showBattery": "Show Battery Icon",
-  "settings.menubar.showMusic": "Show Music Now Playing",
+  "settings.menubar.showMusic": "Nu afspelen",
   "settings.menubar.badgeStyle": "Unread Badge Style",
   "settings.menubar.badgeStyle.badge": "Standard Badge",
   "settings.menubar.badgeStyle.text": "Simple Text",
@@ -85,5 +85,6 @@
   "settings.menubar.notifications.both": "Beide (Aantal en Pictogrammen)",
   "settings.menubar.notifications.count": "Alleen aantal",
   "settings.menubar.notifications.icons": "Alleen pictogrammen",
-  "settings.menubar.notifications.none": "Geen"
+  "settings.menubar.notifications.none": "Geen",
+  "settings.menubar.showAlbumArt": "Albumhoes weergeven"
 }

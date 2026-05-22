@@ -315,12 +315,26 @@ struct SettingsView: View {
                             .toggleStyle(.switch)
                     }
 
+                    if appState.showMenubarMusicIcon {
+                        HStack {
+                            Label(L("settings.menubar.showAlbumArt"), systemImage: "photo")
+                            Spacer()
+                            Toggle("", isOn: $appState.showMenubarAlbumArt)
+                                .toggleStyle(.switch)
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+
                     HStack {
                         Label(L("settings.menubar.showPillStroke"), systemImage: "capsule")
                         Spacer()
                         Toggle("", isOn: $appState.showMenubarPillStroke)
                             .toggleStyle(.switch)
                     }
+
+
+                    Divider()
+                        .transition(.opacity.combined(with: .move(edge: .top)))
 
                     HStack {
                         Label(L("settings.menubar.notifications"), systemImage: "bell")
@@ -335,8 +349,6 @@ struct SettingsView: View {
                     }
 
                     if appState.menubarNotificationStyle == "count" || appState.menubarNotificationStyle == "both" {
-                        Divider()
-                            .transition(.opacity.combined(with: .move(edge: .top)))
 
                         HStack {
                             Label(L("settings.menubar.badgeStyle"), systemImage: "bell.badge")
@@ -377,6 +389,7 @@ struct SettingsView: View {
             .animation(.spring(), value: appState.showMenubarIcon)
             .animation(.spring(), value: appState.menubarBatteryStyle)
             .animation(.spring(), value: appState.showMenubarMusicIcon)
+            .animation(.spring(), value: appState.showMenubarAlbumArt)
             .animation(.spring(), value: appState.showMenubarPillStroke)
             .animation(.spring(), value: appState.menubarNotificationStyle)
             .animation(.spring(), value: appState.menubarUnreadBadgeStyle)
