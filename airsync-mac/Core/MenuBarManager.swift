@@ -18,6 +18,7 @@ class MenuBarManager: NSObject {
     private var cancellables = Set<AnyCancellable>()
     private var appState = AppState.shared
     private var temporaryDragLabel: String?
+    private var hostingView: ClickThroughHostingView<MenubarStatusView>?
     
     private let statusButton: MenuBarStatusButton = {
         let view = MenuBarStatusButton(frame: NSRect(x: 0, y: 0, width: 22, height: 22))
@@ -49,6 +50,23 @@ class MenuBarManager: NSObject {
                 statusButton.bottomAnchor.constraint(equalTo: button.bottomAnchor)
             ])
             
+            // Set up ClickThroughHostingView for SwiftUI custom status bar rendering
+            let hostedView = MenubarStatusView()
+            let hosting = ClickThroughHostingView(rootView: hostedView)
+            button.addSubview(hosting)
+            hosting.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                hosting.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+                hosting.trailingAnchor.constraint(equalTo: button.trailingAnchor),
+                hosting.topAnchor.constraint(equalTo: button.topAnchor),
+                hosting.bottomAnchor.constraint(equalTo: button.bottomAnchor)
+            ])
+            self.hostingView = hosting
+            
+            // Make sure the native button has no title/image overlay
+            button.image = nil
+            button.title = ""
+            
             updateStatusItem()
         }
     }
@@ -65,86 +83,52 @@ class MenuBarManager: NSObject {
             appState.$status.map { _ in () }.eraseToAnyPublisher(),
             appState.$showMenubarText.map { _ in () }.eraseToAnyPublisher(),
             appState.$showingQuickShareTransfer.map { _ in () }.eraseToAnyPublisher(),
+            appState.$showMenubarIcon.map { _ in () }.eraseToAnyPublisher(),
+            appState.$showMenubarBatteryIcon.map { _ in () }.eraseToAnyPublisher(),
+            appState.$showMenubarMusicIcon.map { _ in () }.eraseToAnyPublisher(),
+            appState.$menubarUnreadBadgeStyle.map { _ in () }.eraseToAnyPublisher(),
+            appState.$menubarUnreadBadgeColor.map { _ in () }.eraseToAnyPublisher(),
+            appState.$showMenubarDeviceName.map { _ in () }.eraseToAnyPublisher(),
+            appState.$menubarTextMaxLength.map { _ in () }.eraseToAnyPublisher(),
+            appState.$temporaryDragLabel.map { _ in () }.eraseToAnyPublisher(),
             BLECentralManager.shared.$connectionStatus.map { _ in () }.eraseToAnyPublisher(),
             BLECentralManager.shared.$connectedDeviceName.map { _ in () }.eraseToAnyPublisher()
         ])
         .receive(on: RunLoop.main)
         .sink { [weak self] in
-            self?.updateStatusItem()
+            DispatchQueue.main.async {
+                self?.updateStatusItem()
+            }
         }
         .store(in: &cancellables)
         
     }
     
     func updateStatusItem() {
-        guard let button = statusItem?.button else { return }
+        guard let button = statusItem?.button, let hostingView = hostingView else { return }
         
-        // Update icon based on state
-        let isConnected = appState.device != nil || BLECentralManager.shared.isAuthenticated
-        let iconName = isConnected
-            ? (appState.notifications.isEmpty ? "iphone.gen3" : "iphone.gen3.radiowaves.left.and.right")
-            : "iphone.slash"
+        button.image = nil
+        button.title = ""
         
-        button.image = NSImage(systemSymbolName: iconName, accessibilityDescription: "AirSync")
-        button.imagePosition = .imageLeft
-        
-        // Update text if enabled
-        if let dragLabel = temporaryDragLabel {
-            button.title = dragLabel
-        } else if appState.showMenubarText, let text = getDeviceStatusText() {
-            button.title = text
-        } else {
-            button.title = ""
-        }
+        let fittingSize = hostingView.fittingSize
+        statusItem?.length = max(22, fittingSize.width)
     }
     
     func showDragLabel(_ label: String) {
         temporaryDragLabel = label
+        appState.temporaryDragLabel = label
         updateStatusItem()
     }
     
     func clearDragLabel() {
         temporaryDragLabel = nil
+        appState.temporaryDragLabel = nil
         updateStatusItem()
     }
     
     private func getDeviceStatusText() -> String? {
-        let isBLEAuthenticated = BLECentralManager.shared.isAuthenticated
-        let isWSConnected = appState.device != nil
-        
-        guard isWSConnected || isBLEAuthenticated else { return nil }
-        
-        let connectedDeviceName = appState.device?.name ?? (isBLEAuthenticated ? BLECentralManager.shared.connectedDeviceName : nil)
-        guard let name = connectedDeviceName else { return nil }
-        
-        let unreadCount = appState.notifications.count
-        let unreadPrefix = unreadCount > 0 ? "\(unreadCount)* • " : ""
-        
-        if let music = appState.status?.music, music.isPlaying {
-            let title = music.title.isEmpty ? "Unknown Title" : music.title
-            let artist = music.artist.isEmpty ? "Unknown Artist" : music.artist
-            let fullText = unreadPrefix + "\(title) • \(artist)"
-            return truncate(text: fullText)
-        } else {
-            var parts: [String] = []
-            if appState.showMenubarDeviceName {
-                parts.append(name)
-            }
-            
-            if let batteryLevel = appState.status?.battery.level {
-                parts.append("\(batteryLevel)%")
-            }
-            let statusText = parts.isEmpty ? nil : parts.joined(separator: " • ")
-            return statusText.map { truncate(text: unreadPrefix + $0) }
-        }
-    }
-    
-    private func truncate(text: String) -> String {
-        let maxLength = appState.menubarTextMaxLength
-        if text.count > maxLength {
-            return String(text.prefix(maxLength - 1)) + "…"
-        }
-        return text
+        // Kept for backward compatibility/reference but handled by SwiftUI view
+        return nil
     }
     
     func togglePopover() {
@@ -285,5 +269,162 @@ class MenuBarStatusButton: NSView {
         }
         
         return false
+    }
+}
+
+// MARK: - Click-Through Hosting View Subclass
+class ClickThroughHostingView<Content: View>: NSHostingView<Content> {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return nil
+    }
+}
+
+// MARK: - Menubar Status View
+struct MenubarStatusView: View {
+    @ObservedObject var appState = AppState.shared
+    @ObservedObject var bleManager = BLECentralManager.shared
+    
+    var body: some View {
+        HStack(spacing: 6) {
+            let isConnected = appState.device != nil || bleManager.isAuthenticated
+            
+            // 1. Primary Icon
+            if appState.showMenubarIcon {
+                let iconName = isConnected
+                    ? (appState.notifications.isEmpty ? "iphone.gen3" : "iphone.gen3.radiowaves.left.and.right")
+                    : "iphone.slash"
+                Image(systemName: iconName)
+                    .imageScale(.medium)
+            }
+            
+            if isConnected {
+                // 2. Unread Badge
+                let unreadCount = appState.notifications.count
+                if unreadCount > 0 {
+                    if appState.menubarUnreadBadgeStyle == "badge" {
+                        Text("\(unreadCount)")
+                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(badgeColor)
+                            .clipShape(Capsule())
+                    } else if appState.menubarUnreadBadgeStyle == "text" {
+                        Text("\(unreadCount)*")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                // 3. Status Text / Details
+                if appState.showMenubarText {
+                    if let dragLabel = appState.temporaryDragLabel {
+                        Text(dragLabel)
+                            .font(.system(size: 12, weight: .medium))
+                    } else {
+                        HStack(spacing: 5) {
+                            // Music now playing (takes priority or displays next)
+                            if appState.showMenubarMusicIcon, let music = appState.status?.music, music.isPlaying {
+                                let title = music.title.isEmpty ? "Unknown Title" : music.title
+                                let artist = music.artist.isEmpty ? "Unknown Artist" : music.artist
+                                let musicText = truncate(text: "\(title) - \(artist)")
+                                
+                                HStack(spacing: 3) {
+                                    Image(systemName: "music.note")
+                                        .foregroundColor(.accentColor)
+                                        .opacity(musicPulse ? 0.6 : 1.0)
+                                        .onAppear {
+                                            withAnimation(Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                                                musicPulse = true
+                                            }
+                                        }
+                                    Text(musicText)
+                                        .font(.system(size: 12))
+                                }
+                            } else {
+                                // Device name
+                                if appState.showMenubarDeviceName {
+                                    let deviceName = appState.device?.name ?? (bleManager.isAuthenticated ? bleManager.connectedDeviceName : nil) ?? ""
+                                    if !deviceName.isEmpty {
+                                        Text(truncate(text: deviceName))
+                                            .font(.system(size: 12, weight: .medium))
+                                    }
+                                }
+                                
+                                // Battery
+                                if let battery = appState.status?.battery {
+                                    HStack(spacing: 3) {
+                                        if appState.showMenubarDeviceName {
+                                            Text("•")
+                                                .foregroundColor(.secondary)
+                                        }
+                                        
+                                        if appState.showMenubarBatteryIcon {
+                                            Image(systemName: getBatteryIconName(level: battery.level, isCharging: battery.isCharging))
+                                                .foregroundColor(batteryColor(level: battery.level, isCharging: battery.isCharging))
+                                        }
+                                        
+                                        Text("\(battery.level)%")
+                                            .font(.system(size: 11, design: .monospaced))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 4)
+        .frame(height: 22)
+    }
+    
+    @State private var musicPulse = false
+    
+    private var badgeColor: Color {
+        switch appState.menubarUnreadBadgeColor {
+        case "red": return .red
+        case "orange": return .orange
+        case "blue": return .blue
+        case "green": return .green
+        case "purple": return .purple
+        case "gray": return .gray
+        default: return .red
+        }
+    }
+    
+    private func batteryColor(level: Int, isCharging: Bool) -> Color {
+        if isCharging {
+            return .green
+        } else if level <= 20 {
+            return .red
+        } else if level <= 45 {
+            return .orange
+        } else {
+            return .primary
+        }
+    }
+    
+    private func getBatteryIconName(level: Int, isCharging: Bool) -> String {
+        if isCharging {
+            return "battery.100.bolt"
+        } else if level >= 90 {
+            return "battery.100"
+        } else if level >= 65 {
+            return "battery.75"
+        } else if level >= 35 {
+            return "battery.50"
+        } else if level >= 15 {
+            return "battery.25"
+        } else {
+            return "battery.0"
+        }
+    }
+    
+    private func truncate(text: String) -> String {
+        let maxLength = appState.menubarTextMaxLength
+        if text.count > maxLength {
+            return String(text.prefix(maxLength - 1)) + "…"
+        }
+        return text
     }
 }

@@ -56,5 +56,22 @@
   "quickshare.drop.send_to": "Send to %@",
   "quickshare.drop.pick_device": "Pick a device to send",
   "settings.quickshare": "Quick Share",
-  "quickshare.copy": "Копировать в буфер обмена"
+  "quickshare.copy": "Копировать в буфер обмена",
+  "settings.menubar.showIcon": "Show Menu Bar Icon",
+  "settings.menubar.showText": "Show Menu Bar Text",
+  "settings.menubar.maxLength": "Max Length",
+  "settings.menubar.showDeviceName": "Show Device Name",
+  "settings.menubar.showBattery": "Show Battery Icon",
+  "settings.menubar.showMusic": "Show Music Now Playing",
+  "settings.menubar.badgeStyle": "Unread Badge Style",
+  "settings.menubar.badgeStyle.badge": "Standard Badge",
+  "settings.menubar.badgeStyle.text": "Simple Text",
+  "settings.menubar.badgeStyle.none": "None",
+  "settings.menubar.badgeColor": "Badge Color",
+  "settings.menubar.color.red": "Red",
+  "settings.menubar.color.orange": "Orange",
+  "settings.menubar.color.blue": "Blue",
+  "settings.menubar.color.green": "Green",
+  "settings.menubar.color.purple": "Purple",
+  "settings.menubar.color.gray": "Gray"
 }

@@ -47,6 +47,12 @@ class AppState: ObservableObject {
         let savedMaxLength = UserDefaults.standard.integer(forKey: "menubarTextMaxLength")
         self.menubarTextMaxLength = savedMaxLength > 0 ? savedMaxLength : 30
 
+        self.showMenubarIcon = UserDefaults.standard.object(forKey: "showMenubarIcon") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarIcon")
+        self.showMenubarBatteryIcon = UserDefaults.standard.object(forKey: "showMenubarBatteryIcon") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarBatteryIcon")
+        self.showMenubarMusicIcon = UserDefaults.standard.object(forKey: "showMenubarMusicIcon") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarMusicIcon")
+        self.menubarUnreadBadgeStyle = UserDefaults.standard.string(forKey: "menubarUnreadBadgeStyle") ?? "badge"
+        self.menubarUnreadBadgeColor = UserDefaults.standard.string(forKey: "menubarUnreadBadgeColor") ?? "red"
+
         self.isClipboardSyncEnabled = UserDefaults.standard.bool(forKey: "isClipboardSyncEnabled")
         self.windowOpacity = UserDefaults.standard.double(forKey: "windowOpacity")
         self.hideDockIcon = UserDefaults.standard.bool(forKey: "hideDockIcon")
@@ -240,6 +246,7 @@ class AppState: ObservableObject {
     
     @Published var recentApps: [AndroidApp] = []
     @Published var isNativeMirroring: Bool = false
+    @Published var temporaryDragLabel: String? = nil
     
     // MARK: - Centralized Media Seekbar State
     @Published var mediaPosition: Double = 0
@@ -277,6 +284,36 @@ class AppState: ObservableObject {
     @Published var menubarTextMaxLength: Int {
         didSet {
             UserDefaults.standard.set(menubarTextMaxLength, forKey: "menubarTextMaxLength")
+        }
+    }
+
+    @Published var showMenubarIcon: Bool {
+        didSet {
+            UserDefaults.standard.set(showMenubarIcon, forKey: "showMenubarIcon")
+        }
+    }
+
+    @Published var showMenubarBatteryIcon: Bool {
+        didSet {
+            UserDefaults.standard.set(showMenubarBatteryIcon, forKey: "showMenubarBatteryIcon")
+        }
+    }
+
+    @Published var showMenubarMusicIcon: Bool {
+        didSet {
+            UserDefaults.standard.set(showMenubarMusicIcon, forKey: "showMenubarMusicIcon")
+        }
+    }
+
+    @Published var menubarUnreadBadgeStyle: String {
+        didSet {
+            UserDefaults.standard.set(menubarUnreadBadgeStyle, forKey: "menubarUnreadBadgeStyle")
+        }
+    }
+
+    @Published var menubarUnreadBadgeColor: String {
+        didSet {
+            UserDefaults.standard.set(menubarUnreadBadgeColor, forKey: "menubarUnreadBadgeColor")
         }
     }
 

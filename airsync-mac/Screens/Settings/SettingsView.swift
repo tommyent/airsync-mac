@@ -252,10 +252,17 @@ struct SettingsView: View {
     private var menubarSettingsView: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                headerSection(title: "Menu Bar", icon: "menubar.arrow.up.rectangle")
+                headerSection(title: L("settings.menubar"), icon: "menubar.arrow.up.rectangle")
                 VStack(spacing: 12) {
                     HStack {
-                        Label("Show Menu Bar Text", systemImage: "text.alignleft")
+                        Label(L("settings.menubar.showIcon"), systemImage: "iphone.gen3")
+                        Spacer()
+                        Toggle("", isOn: $appState.showMenubarIcon)
+                            .toggleStyle(.switch)
+                    }
+
+                    HStack {
+                        Label(L("settings.menubar.showText"), systemImage: "text.alignleft")
                         Spacer()
                         Toggle("", isOn: $appState.showMenubarText)
                             .toggleStyle(.switch)
@@ -264,7 +271,7 @@ struct SettingsView: View {
                     if appState.showMenubarText {
                         VStack(spacing: 12) {
                             HStack {
-                                Label("Max Length", systemImage: "arrow.left.and.right")
+                                Label(L("settings.menubar.maxLength"), systemImage: "arrow.left.and.right")
                                 Spacer()
                                 Slider(
                                     value: Binding(
@@ -279,11 +286,57 @@ struct SettingsView: View {
                             }
 
                             HStack {
-                                Label("Show Device Name", systemImage: "iphone.gen3")
+                                Label(L("settings.menubar.showDeviceName"), systemImage: "iphone.gen3")
                                 Spacer()
                                 Toggle("", isOn: $appState.showMenubarDeviceName)
                                     .toggleStyle(.switch)
                             }
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+
+                    Divider()
+
+                    HStack {
+                        Label(L("settings.menubar.showBattery"), systemImage: "battery.100")
+                        Spacer()
+                        Toggle("", isOn: $appState.showMenubarBatteryIcon)
+                            .toggleStyle(.switch)
+                    }
+
+                    HStack {
+                        Label(L("settings.menubar.showMusic"), systemImage: "music.note")
+                        Spacer()
+                        Toggle("", isOn: $appState.showMenubarMusicIcon)
+                            .toggleStyle(.switch)
+                    }
+
+                    Divider()
+
+                    HStack {
+                        Label(L("settings.menubar.badgeStyle"), systemImage: "bell.badge")
+                        Spacer()
+                        Picker("", selection: $appState.menubarUnreadBadgeStyle) {
+                            Text(L("settings.menubar.badgeStyle.badge")).tag("badge")
+                            Text(L("settings.menubar.badgeStyle.text")).tag("text")
+                            Text(L("settings.menubar.badgeStyle.none")).tag("none")
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                    }
+
+                    if appState.menubarUnreadBadgeStyle == "badge" {
+                        HStack {
+                            Label(L("settings.menubar.badgeColor"), systemImage: "paintpalette")
+                            Spacer()
+                            Picker("", selection: $appState.menubarUnreadBadgeColor) {
+                                Text(L("settings.menubar.color.red")).tag("red")
+                                Text(L("settings.menubar.color.orange")).tag("orange")
+                                Text(L("settings.menubar.color.blue")).tag("blue")
+                                Text(L("settings.menubar.color.green")).tag("green")
+                                Text(L("settings.menubar.color.purple")).tag("purple")
+                                Text(L("settings.menubar.color.gray")).tag("gray")
+                            }
+                            .pickerStyle(MenuPickerStyle())
                         }
                         .transition(.opacity.combined(with: .move(edge: .top)))
                     }
@@ -293,6 +346,10 @@ struct SettingsView: View {
             }
             .padding()
             .animation(.spring(), value: appState.showMenubarText)
+            .animation(.spring(), value: appState.showMenubarIcon)
+            .animation(.spring(), value: appState.showMenubarBatteryIcon)
+            .animation(.spring(), value: appState.showMenubarMusicIcon)
+            .animation(.spring(), value: appState.menubarUnreadBadgeStyle)
         }
     }
 

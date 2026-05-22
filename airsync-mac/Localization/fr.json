@@ -56,5 +56,22 @@
   "quickshare.drop.send_to": "Envoyer à %@",
   "quickshare.drop.pick_device": "Choisissez un appareil auquel envoyer",
   "settings.quickshare": "Quick Share",
-  "quickshare.copy": "Copier dans le presse-papiers"
+  "quickshare.copy": "Copier dans le presse-papiers",
+  "settings.menubar.showIcon": "Afficher l'icône de la barre de menus",
+  "settings.menubar.showText": "Afficher le texte de la barre de menus",
+  "settings.menubar.maxLength": "Longueur maximale",
+  "settings.menubar.showDeviceName": "Afficher le nom de l'appareil",
+  "settings.menubar.showBattery": "Afficher l'icône de batterie",
+  "settings.menubar.showMusic": "Afficher la musique en cours",
+  "settings.menubar.badgeStyle": "Style de badge non lu",
+  "settings.menubar.badgeStyle.badge": "Badge standard",
+  "settings.menubar.badgeStyle.text": "Texte simple",
+  "settings.menubar.badgeStyle.none": "Aucun",
+  "settings.menubar.badgeColor": "Couleur du badge",
+  "settings.menubar.color.red": "Rouge",
+  "settings.menubar.color.orange": "Orange",
+  "settings.menubar.color.blue": "Bleu",
+  "settings.menubar.color.green": "Vert",
+  "settings.menubar.color.purple": "Violet",
+  "settings.menubar.color.gray": "Gris"
 }
