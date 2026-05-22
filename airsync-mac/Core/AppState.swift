@@ -28,7 +28,7 @@ class AppState: ObservableObject {
     @Published var isOS26: Bool = true
 
     init() {
-        self.isPlus = false
+        self.isPlus = UserDefaults.standard.bool(forKey: "isPlus")
 
         let adbPortValue = UserDefaults.standard.integer(forKey: "adbPort")
         self.adbPort = adbPortValue == 0 ? 5555 : UInt16(adbPortValue)
@@ -138,6 +138,8 @@ class AppState: ObservableObject {
         UserDefaults.standard.lastLicenseSuccessfulCheckDate = Date().addingTimeInterval(-(24 * 60 * 60))
         #else
         Task {
+            // Delay startup check by 5 minutes (300 seconds) to ensure network connection is fully established
+            try? await Task.sleep(nanoseconds: 300_000_000_000)
             await Gumroad().checkLicenseIfNeeded()
         }
         #endif
