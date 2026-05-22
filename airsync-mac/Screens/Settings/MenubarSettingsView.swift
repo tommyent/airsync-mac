@@ -183,6 +183,26 @@ struct MenubarSettingsView: View {
                             .transition(.opacity.combined(with: .move(edge: .top)))
                         }
                     }
+
+                    HStack {
+                        Label(L("settings.menubar.notifications.calls"), systemImage: "phone")
+                        Spacer()
+                        ZStack {
+                            Toggle("", isOn: $appState.showMenubarCallDetails)
+                                .toggleStyle(.switch)
+                                .disabled(!appState.isPlus && appState.licenseCheck)
+
+                            if !appState.isPlus && appState.licenseCheck {
+                                Color.clear
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        plusPopoverMessage = L("settings.menubar.calls.plusFeatureMessage")
+                                        showingPlusPopover = true
+                                    }
+                                    .frame(width: 50, height: 30)
+                            }
+                        }
+                    }
                 }
                 .padding()
                 .glassBoxIfAvailable(radius: 18)
@@ -202,6 +222,7 @@ struct MenubarSettingsView: View {
             .animation(.spring(), value: appState.showMenubarPillStroke)
             .animation(.spring(), value: appState.menubarNotificationStyle)
             .animation(.spring(), value: appState.menubarUnreadBadgeStyle)
+            .animation(.spring(), value: appState.showMenubarCallDetails)
         }
     }
 

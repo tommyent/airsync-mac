@@ -135,5 +135,7 @@
   "menubar.call.incomingCall": "Incoming Call",
   "menubar.call.outgoingCall": "Outgoing Call",
   "menubar.call.ringing": "Ringing...",
-  "menubar.call.accepted": "Accepted"
+  "menubar.call.accepted": "Accepted",
+  "settings.menubar.notifications.calls": "Calls",
+  "settings.menubar.calls.plusFeatureMessage": "Ongoing call pill details are available in AirSync+"
 }

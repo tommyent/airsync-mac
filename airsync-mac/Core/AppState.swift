@@ -28,7 +28,8 @@ class AppState: ObservableObject {
     @Published var isOS26: Bool = true
 
     init() {
-        self.isPlus = UserDefaults.standard.bool(forKey: "isPlus")
+        let isPlusLoaded = UserDefaults.standard.bool(forKey: "isPlus")
+        self.isPlus = isPlusLoaded
 
         let adbPortValue = UserDefaults.standard.integer(forKey: "adbPort")
         self.adbPort = adbPortValue == 0 ? 5555 : UInt16(adbPortValue)
@@ -51,6 +52,11 @@ class AppState: ObservableObject {
         self.menubarBatteryStyle = UserDefaults.standard.string(forKey: "menubarBatteryStyle") ?? "both"
         self.showMenubarMusicIcon = UserDefaults.standard.object(forKey: "showMenubarMusicIcon") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarMusicIcon")
         self.showMenubarAlbumArt = UserDefaults.standard.object(forKey: "showMenubarAlbumArt") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarAlbumArt")
+        if UserDefaults.standard.object(forKey: "showMenubarCallDetails") == nil {
+            self.showMenubarCallDetails = isPlusLoaded
+        } else {
+            self.showMenubarCallDetails = UserDefaults.standard.bool(forKey: "showMenubarCallDetails") && (!licenseCheck || isPlusLoaded)
+        }
         self.menubarFontSize = UserDefaults.standard.object(forKey: "menubarFontSize") == nil ? 12.0 : UserDefaults.standard.double(forKey: "menubarFontSize")
         self.menubarUnreadBadgeStyle = UserDefaults.standard.string(forKey: "menubarUnreadBadgeStyle") ?? "badge"
         self.menubarUnreadBadgeColor = UserDefaults.standard.string(forKey: "menubarUnreadBadgeColor") ?? "accent"
@@ -214,7 +220,42 @@ class AppState: ObservableObject {
     @Published var notifications: [Notification] = []
     @Published var activeMacIp: String? = nil
     @Published var callEvents: [CallEvent] = []
-    @Published var activeCall: CallEvent? = nil
+    private var callDurationTimer: AnyCancellable?
+    @Published var activeCallDurationSec: Int = 0
+
+    @Published var activeCall: CallEvent? = nil {
+        didSet {
+            if activeCall != nil {
+                startCallTimer()
+            } else {
+                stopCallTimer()
+            }
+        }
+    }
+    
+    private func startCallTimer() {
+        callDurationTimer?.cancel()
+        
+        if let call = activeCall {
+            activeCallDurationSec = max(0, Int(Date().timeIntervalSince1970 - Double(call.timestamp) / 1000.0))
+        }
+        
+        callDurationTimer = Timer.publish(every: 1.0, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self = self, let call = self.activeCall else {
+                    self?.stopCallTimer()
+                    return
+                }
+                self.activeCallDurationSec = max(0, Int(Date().timeIntervalSince1970 - Double(call.timestamp) / 1000.0))
+            }
+    }
+    
+    private func stopCallTimer() {
+        callDurationTimer?.cancel()
+        callDurationTimer = nil
+        activeCallDurationSec = 0
+    }
     @Published var status: DeviceStatus? = nil
     @Published var myDevice: Device? = nil
     @Published var port: UInt16 = Defaults.serverPort
@@ -349,6 +390,12 @@ class AppState: ObservableObject {
     @Published var menubarNotificationStyle: String {
         didSet {
             UserDefaults.standard.set(menubarNotificationStyle, forKey: "menubarNotificationStyle")
+        }
+    }
+
+    @Published var showMenubarCallDetails: Bool {
+        didSet {
+            UserDefaults.standard.set(showMenubarCallDetails, forKey: "showMenubarCallDetails")
         }
     }
 
@@ -633,6 +680,7 @@ class AppState: ObservableObject {
                 }
                 showMenubarAlbumArt = false
                 menubarNotificationStyle = "count"
+                showMenubarCallDetails = false
             }
             // Notify about license status change for icon revert logic
             NotificationCenter.default.post(name: NSNotification.Name("LicenseStatusChanged"), object: nil)

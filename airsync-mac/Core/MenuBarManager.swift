@@ -83,7 +83,10 @@ class MenuBarManager: NSObject {
             appState.$status.map { _ in () }.eraseToAnyPublisher(),
             appState.$showMenubarText.map { _ in () }.eraseToAnyPublisher(),
             appState.$showingQuickShareTransfer.map { _ in () }.eraseToAnyPublisher(),
-            appState.$showMenubarIcon.map { _ in () }.eraseToAnyPublisher()
+            appState.$showMenubarIcon.map { _ in () }.eraseToAnyPublisher(),
+            appState.$showMenubarCallDetails.map { _ in () }.eraseToAnyPublisher(),
+            appState.$activeCall.map { _ in () }.eraseToAnyPublisher(),
+            appState.$activeCallDurationSec.map { _ in () }.eraseToAnyPublisher()
         ]
         
         let group2: [AnyPublisher<Void, Never>] = [
@@ -320,7 +323,37 @@ struct MenubarStatusView: View {
                             // Left part: Device Name or Music Info
                             let showMusic = appState.showMenubarMusicIcon && (appState.status?.music?.isPlaying ?? false)
                             
-                            if showMusic, let music = appState.status?.music {
+                            if appState.showMenubarCallDetails, let callEvent = appState.activeCall {
+                                HStack(spacing: 4) {
+                                    if let photoString = callEvent.contactPhoto,
+                                       !photoString.isEmpty,
+                                       let data = Data(base64Encoded: photoString, options: .ignoreUnknownCharacters) ?? Data(base64Encoded: photoString),
+                                       let nsImage = NSImage(data: data) {
+                                        let avatarSize = appState.menubarFontSize + 2
+                                        Image(nsImage: nsImage)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(width: avatarSize, height: avatarSize)
+                                            .clipShape(Circle())
+                                    } else {
+                                        Image(systemName: callEvent.direction == .incoming ? "phone.arrow.down.left.fill" : "phone.arrow.up.right.fill")
+                                            .font(.system(size: appState.menubarFontSize))
+                                            .foregroundColor(.green)
+                                    }
+                                    
+                                    Text(callEvent.contactName)
+                                        .font(.system(size: appState.menubarFontSize, weight: .medium))
+                                        .lineLimit(1)
+                                    
+                                    Text("•")
+                                        .font(.system(size: appState.menubarFontSize))
+                                        .foregroundColor(.secondary)
+                                    
+                                    Text(formatCallDuration(seconds: appState.activeCallDurationSec))
+                                        .font(.system(size: appState.menubarFontSize, design: .monospaced))
+                                        .layoutPriority(1)
+                                }
+                            } else if showMusic, let music = appState.status?.music {
                                 let title = music.title.isEmpty ? "Unknown Title" : music.title
                                 let artist = music.artist.isEmpty ? "Unknown Artist" : music.artist
                                 let musicText = truncate(text: "\(title) - \(artist)")
@@ -434,8 +467,12 @@ struct MenubarStatusView: View {
         .background(
             Group {
                 if appState.showMenubarPillStroke {
+                    let hasCall = appState.activeCall != nil
                     Capsule()
-                        .stroke(Color.primary.opacity(0.18), lineWidth: 1.0)
+                        .stroke(
+                            hasCall ? Color.accentColor : Color.primary.opacity(0.18),
+                            lineWidth: hasCall ? 2.0 : 1.0
+                        )
                 }
             }
         )
@@ -477,6 +514,18 @@ struct MenubarStatusView: View {
             return "battery.25"
         } else {
             return "battery.0"
+        }
+    }
+    
+    private func formatCallDuration(seconds: Int) -> String {
+        let hours = seconds / 3600
+        let minutes = (seconds % 3600) / 60
+        let secs = seconds % 60
+        
+        if hours > 0 {
+            return String(format: "%02d:%02d:%02d", hours, minutes, secs)
+        } else {
+            return String(format: "%02d:%02d", minutes, secs)
         }
     }
     
