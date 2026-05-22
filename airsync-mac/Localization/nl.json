@@ -73,5 +73,8 @@
   "settings.menubar.color.blue": "Blue",
   "settings.menubar.color.green": "Green",
   "settings.menubar.color.purple": "Purple",
-  "settings.menubar.color.gray": "Gray"
+  "settings.menubar.color.gray": "Gray",
+  "settings.menubar.color.accent": "System Accent",
+  "settings.menubar.showPillStroke": "Container Pill Border",
+  "settings.menubar.showRecentNotifIcons": "Toon recente meldingpictogrammen"
 }

@@ -73,5 +73,8 @@
   "settings.menubar.color.blue": "Azul",
   "settings.menubar.color.green": "Verde",
   "settings.menubar.color.purple": "Púrpura",
-  "settings.menubar.color.gray": "Gris"
+  "settings.menubar.color.gray": "Gris",
+  "settings.menubar.color.accent": "Acento del sistema",
+  "settings.menubar.showPillStroke": "Borde de pastilla del contenedor",
+  "settings.menubar.showRecentNotifIcons": "Mostrar iconos de notificaciones recientes"
 }

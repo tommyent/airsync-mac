@@ -51,7 +51,9 @@ class AppState: ObservableObject {
         self.showMenubarBatteryIcon = UserDefaults.standard.object(forKey: "showMenubarBatteryIcon") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarBatteryIcon")
         self.showMenubarMusicIcon = UserDefaults.standard.object(forKey: "showMenubarMusicIcon") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarMusicIcon")
         self.menubarUnreadBadgeStyle = UserDefaults.standard.string(forKey: "menubarUnreadBadgeStyle") ?? "badge"
-        self.menubarUnreadBadgeColor = UserDefaults.standard.string(forKey: "menubarUnreadBadgeColor") ?? "red"
+        self.menubarUnreadBadgeColor = UserDefaults.standard.string(forKey: "menubarUnreadBadgeColor") ?? "accent"
+        self.showMenubarPillStroke = UserDefaults.standard.bool(forKey: "showMenubarPillStroke")
+        self.showMenubarRecentNotifIcons = UserDefaults.standard.object(forKey: "showMenubarRecentNotifIcons") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarRecentNotifIcons")
 
         self.isClipboardSyncEnabled = UserDefaults.standard.bool(forKey: "isClipboardSyncEnabled")
         self.windowOpacity = UserDefaults.standard.double(forKey: "windowOpacity")
@@ -315,6 +317,31 @@ class AppState: ObservableObject {
         didSet {
             UserDefaults.standard.set(menubarUnreadBadgeColor, forKey: "menubarUnreadBadgeColor")
         }
+    }
+
+    @Published var showMenubarPillStroke: Bool {
+        didSet {
+            UserDefaults.standard.set(showMenubarPillStroke, forKey: "showMenubarPillStroke")
+        }
+    }
+
+    @Published var showMenubarRecentNotifIcons: Bool {
+        didSet {
+            UserDefaults.standard.set(showMenubarRecentNotifIcons, forKey: "showMenubarRecentNotifIcons")
+        }
+    }
+
+    var recentNotifyingPackages: [String] {
+        var packages: [String] = []
+        for notif in notifications {
+            if !packages.contains(notif.package) {
+                packages.append(notif.package)
+                if packages.count == 3 {
+                    break
+                }
+            }
+        }
+        return packages
     }
 
     @Published var scrcpyBitrate: Int = 4 {

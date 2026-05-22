@@ -73,5 +73,8 @@
   "settings.menubar.color.blue": "Bleu",
   "settings.menubar.color.green": "Vert",
   "settings.menubar.color.purple": "Violet",
-  "settings.menubar.color.gray": "Gris"
+  "settings.menubar.color.gray": "Gris",
+  "settings.menubar.color.accent": "Accentuation du système",
+  "settings.menubar.showPillStroke": "Bordure de pilule du conteneur",
+  "settings.menubar.showRecentNotifIcons": "Afficher les icônes de notification récentes"
 }

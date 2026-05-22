@@ -73,5 +73,8 @@
   "settings.menubar.color.blue": "Blau",
   "settings.menubar.color.green": "Grün",
   "settings.menubar.color.purple": "Lila",
-  "settings.menubar.color.gray": "Grau"
+  "settings.menubar.color.gray": "Grau",
+  "settings.menubar.color.accent": "System-Akzent",
+  "settings.menubar.showPillStroke": "Rahmen um Menüleisten-Container",
+  "settings.menubar.showRecentNotifIcons": "Symbole kürzlicher Benachrichtigungen anzeigen"
 }

@@ -77,31 +77,42 @@ class MenuBarManager: NSObject {
     
     private func setupBindings() {
         // Update menu bar when appState changes
-        Publishers.MergeMany([
+        let group1: [AnyPublisher<Void, Never>] = [
             appState.$device.map { _ in () }.eraseToAnyPublisher(),
             appState.$notifications.map { _ in () }.eraseToAnyPublisher(),
             appState.$status.map { _ in () }.eraseToAnyPublisher(),
             appState.$showMenubarText.map { _ in () }.eraseToAnyPublisher(),
             appState.$showingQuickShareTransfer.map { _ in () }.eraseToAnyPublisher(),
-            appState.$showMenubarIcon.map { _ in () }.eraseToAnyPublisher(),
+            appState.$showMenubarIcon.map { _ in () }.eraseToAnyPublisher()
+        ]
+        
+        let group2: [AnyPublisher<Void, Never>] = [
             appState.$showMenubarBatteryIcon.map { _ in () }.eraseToAnyPublisher(),
             appState.$showMenubarMusicIcon.map { _ in () }.eraseToAnyPublisher(),
             appState.$menubarUnreadBadgeStyle.map { _ in () }.eraseToAnyPublisher(),
             appState.$menubarUnreadBadgeColor.map { _ in () }.eraseToAnyPublisher(),
             appState.$showMenubarDeviceName.map { _ in () }.eraseToAnyPublisher(),
-            appState.$menubarTextMaxLength.map { _ in () }.eraseToAnyPublisher(),
+            appState.$menubarTextMaxLength.map { _ in () }.eraseToAnyPublisher()
+        ]
+        
+        let group3: [AnyPublisher<Void, Never>] = [
             appState.$temporaryDragLabel.map { _ in () }.eraseToAnyPublisher(),
+            appState.$showMenubarPillStroke.map { _ in () }.eraseToAnyPublisher(),
+            appState.$showMenubarRecentNotifIcons.map { _ in () }.eraseToAnyPublisher(),
             BLECentralManager.shared.$connectionStatus.map { _ in () }.eraseToAnyPublisher(),
             BLECentralManager.shared.$connectedDeviceName.map { _ in () }.eraseToAnyPublisher()
-        ])
-        .receive(on: RunLoop.main)
-        .sink { [weak self] in
-            DispatchQueue.main.async {
-                self?.updateStatusItem()
-            }
-        }
-        .store(in: &cancellables)
+        ]
         
+        Publishers.MergeMany(group1)
+            .merge(with: Publishers.MergeMany(group2))
+            .merge(with: Publishers.MergeMany(group3))
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in
+                DispatchQueue.main.async {
+                    self?.updateStatusItem()
+                }
+            }
+            .store(in: &cancellables)
     }
     
     func updateStatusItem() {
@@ -372,23 +383,57 @@ struct MenubarStatusView: View {
                         }
                     }
                 }
+
+                // 4. Recent Notification Icons
+                if appState.showMenubarRecentNotifIcons {
+                    let recentPackages = appState.recentNotifyingPackages
+                    if !recentPackages.isEmpty {
+                        HStack(spacing: 4) {
+                            ForEach(recentPackages, id: \.self) { package in
+                                if let path = appState.androidApps[package]?.iconUrl,
+                                   let image = Image(filePath: path) {
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 14, height: 14)
+                                        .clipShape(RoundedRectangle(cornerRadius: 3))
+                                } else {
+                                    Image(systemName: "app.badge")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 14, height: 14)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-        .padding(.horizontal, 4)
+        .padding(.horizontal, appState.showMenubarPillStroke ? 8 : 4)
         .frame(height: 22)
+        .background(
+            Group {
+                if appState.showMenubarPillStroke {
+                    Capsule()
+                        .stroke(Color.primary.opacity(0.18), lineWidth: 1.0)
+                }
+            }
+        )
     }
     
     @State private var musicPulse = false
     
     private var badgeColor: Color {
         switch appState.menubarUnreadBadgeColor {
+        case "accent": return .accentColor
         case "red": return .red
         case "orange": return .orange
         case "blue": return .blue
         case "green": return .green
         case "purple": return .purple
         case "gray": return .gray
-        default: return .red
+        default: return .accentColor
         }
     }
     

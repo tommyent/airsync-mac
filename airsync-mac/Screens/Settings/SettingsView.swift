@@ -311,6 +311,20 @@ struct SettingsView: View {
                             .toggleStyle(.switch)
                     }
 
+                    HStack {
+                        Label(L("settings.menubar.showPillStroke"), systemImage: "capsule")
+                        Spacer()
+                        Toggle("", isOn: $appState.showMenubarPillStroke)
+                            .toggleStyle(.switch)
+                    }
+
+                    HStack {
+                        Label(L("settings.menubar.showRecentNotifIcons"), systemImage: "app.badge")
+                        Spacer()
+                        Toggle("", isOn: $appState.showMenubarRecentNotifIcons)
+                            .toggleStyle(.switch)
+                    }
+
                     Divider()
 
                     HStack {
@@ -329,6 +343,7 @@ struct SettingsView: View {
                             Label(L("settings.menubar.badgeColor"), systemImage: "paintpalette")
                             Spacer()
                             Picker("", selection: $appState.menubarUnreadBadgeColor) {
+                                Text(L("settings.menubar.color.accent")).tag("accent")
                                 Text(L("settings.menubar.color.red")).tag("red")
                                 Text(L("settings.menubar.color.orange")).tag("orange")
                                 Text(L("settings.menubar.color.blue")).tag("blue")
@@ -349,6 +364,8 @@ struct SettingsView: View {
             .animation(.spring(), value: appState.showMenubarIcon)
             .animation(.spring(), value: appState.showMenubarBatteryIcon)
             .animation(.spring(), value: appState.showMenubarMusicIcon)
+            .animation(.spring(), value: appState.showMenubarPillStroke)
+            .animation(.spring(), value: appState.showMenubarRecentNotifIcons)
             .animation(.spring(), value: appState.menubarUnreadBadgeStyle)
         }
     }
