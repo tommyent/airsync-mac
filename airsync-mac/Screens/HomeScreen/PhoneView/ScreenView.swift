@@ -41,6 +41,7 @@ struct ScreenView: View {
                         label: "Send",
                         systemImage: "square.and.arrow.up",
                         iconOnly: true,
+                        fixedIconSize: 16,
                         action: {
                             let panel = NSOpenPanel()
                             panel.allowsMultipleSelection = true
@@ -65,6 +66,7 @@ struct ScreenView: View {
                             label: "Browse",
                             systemImage: "folder",
                             iconOnly: true,
+                            fixedIconSize: 16,
                             action: {
                                 if appState.isPlus && appState.licenseCheck {
                                     appState.openFileBrowser()
@@ -87,6 +89,7 @@ struct ScreenView: View {
                         label: "Mute",
                         systemImage: appState.silenceAllNotifications ? "bell.slash.fill" : "bell.badge",
                         iconOnly: true,
+                        fixedIconSize: 16,
                         action: {
                             appState.silenceAllNotifications.toggle()
                         }
@@ -97,6 +100,7 @@ struct ScreenView: View {
                         label: "Clipboard",
                         systemImage: "clipboard",
                         iconOnly: true,
+                        fixedIconSize: 16,
                         action: {
                             sendClipboard()
                         }
