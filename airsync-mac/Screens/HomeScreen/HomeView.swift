@@ -25,8 +25,16 @@ struct HomeView: View {
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             ZStack {
-                SidebarView()
-                    .transition(.opacity.combined(with: .scale))
+                if appState.selectedTab == .settings {
+                    SettingsSidebarView()
+                        .transition(.opacity.combined(with: .scale))
+                } else if appState.device == nil {
+                    QRScannerSidebarView()
+                        .transition(.opacity.combined(with: .scale))
+                } else {
+                    SidebarView()
+                        .transition(.opacity.combined(with: .scale))
+                }
             }
             .frame(minWidth: 270)
         } detail: {
@@ -65,7 +73,7 @@ struct HomeView: View {
 
     private func updateSidebarVisibility() {
         withAnimation(.easeInOut(duration: 0.3)) {
-            columnVisibility = appState.device != nil ? .all : .detailOnly
+            columnVisibility = .all
         }
     }
 }

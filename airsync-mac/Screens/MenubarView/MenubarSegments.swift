@@ -73,6 +73,16 @@ struct TopSegmentView: View {
                             openQuickShare()
                         }
                     )
+
+                    GlassButtonView(
+                        label: L("menu.browseFiles"),
+                        systemImage: "folder",
+                        iconOnly: true,
+                        circleSize: toolButtonSize,
+                        action: {
+                            WebDAVManager.shared.openInFinder()
+                        }
+                    )
                     
                     if appState.adbConnected {
                         GlassButtonView(
@@ -81,16 +91,30 @@ struct TopSegmentView: View {
                             iconOnly: true,
                             circleSize: toolButtonSize,
                             action: {
-                                ADBConnector.startScrcpy(
-                                    ip: appState.device?.ipAddress ?? "",
-                                    port: appState.adbPort,
-                                    deviceName: appState.device?.name ?? "My Phone"
-                                )
+                                if appState.useNativeMirroringByDefault {
+                                    appState.isNativeMirroring = true
+                                } else {
+                                    ADBConnector.startScrcpy(
+                                        ip: appState.device?.ipAddress ?? "",
+                                        port: appState.adbPort,
+                                        deviceName: appState.device?.name ?? "My Phone"
+                                    )
+                                }
                             }
                         )
                         .contextMenu {
-                            Button("Android Mirror") {
-                                appState.isNativeMirroring = true
+                            if appState.useNativeMirroringByDefault {
+                                Button("scrcpy Mirror") {
+                                    ADBConnector.startScrcpy(
+                                        ip: appState.device?.ipAddress ?? "",
+                                        port: appState.adbPort,
+                                        deviceName: appState.device?.name ?? "My Phone"
+                                    )
+                                }
+                            } else {
+                                Button("Android Mirror") {
+                                    appState.isNativeMirroring = true
+                                }
                             }
                             
                             Button("Desktop Mode") {
@@ -169,7 +193,7 @@ struct MediaSegmentView: View {
         if let status = appState.status {
             DeviceStatusView(showMediaToggle: true)
                 .background {
-                    let artwork = status.music.albumArt
+                    let artwork = status.music?.albumArt ?? ""
                     if !appState.isMusicCardHidden,
                        !artwork.isEmpty,
                        let data = Data(base64Encoded: artwork),
@@ -190,10 +214,14 @@ struct MediaSegmentView: View {
 
 struct DiscoverySegmentView: View {
     @ObservedObject var appState = AppState.shared
-    @StateObject private var udpDiscovery = UDPDiscoveryManager.shared
+    @ObservedObject private var udpDiscovery = UDPDiscoveryManager.shared
+    @ObservedObject private var bleManager = BLECentralManager.shared
 
     var body: some View {
-        if appState.device == nil && !udpDiscovery.discoveredDevices.isEmpty {
+        let hasUdp = !udpDiscovery.discoveredDevices.isEmpty
+        let hasBle = appState.isBLEEnabled && !bleManager.discoveredBLEDevices.isEmpty
+        
+        if appState.device == nil && (hasUdp || hasBle) {
             MenubarDeviceDiscoveryView()
                 .padding(10)
                 .segmentStyle()
@@ -220,3 +248,6 @@ struct NotificationsSegmentView: View {
         }
     }
 }
+
+
+

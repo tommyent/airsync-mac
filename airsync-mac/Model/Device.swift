@@ -10,7 +10,7 @@ import Foundation
 struct Device: Codable, Hashable, Identifiable {
     let id = UUID()
     
-    let name: String
+    var name: String
     let ipAddress: String
     let port: Int
     let version: String
@@ -47,7 +47,10 @@ struct MockData{
         volume: 50,
         isMuted: false,
         albumArt: "",
-        likeStatus: "none"
+        likeStatus: "none",
+        duration: 214,
+        position: 42,
+        isBuffering: false
     )
 
     static let sampleDevices = [

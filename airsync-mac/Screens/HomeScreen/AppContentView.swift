@@ -20,7 +20,7 @@ struct AppContentView: View {
             if appState.device == nil {
                 ScannerView()
                     .tabItem {
-                        Image(systemName: "qrcode")
+                        Image(systemName: "iphone.motion")
                         //                    Label("Scan", systemImage: "qrcode")
                     }
                     .tag(TabIdentifier.qr)
@@ -119,7 +119,7 @@ struct AppContentView: View {
                 }
         }
         .tabViewStyle(.automatic)
-        .frame(minWidth: 550)
+        .frame(minWidth: 550, minHeight: 510)
         .onAppear {
             // Ensure the correct tab is selected when the view appears
             if appState.device == nil {

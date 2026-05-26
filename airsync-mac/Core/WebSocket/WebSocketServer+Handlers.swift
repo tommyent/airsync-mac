@@ -166,6 +166,17 @@ extension WebSocketServer {
                 }
             }
 
+            if let bleToken = dict["bleAuthToken"] as? String {
+                let oldToken = UserDefaults.standard.string(forKey: "bleAuthToken")
+                UserDefaults.standard.set(bleToken, forKey: "bleAuthToken")
+                print("[websocket] Received BLE auth token")
+                
+                // If token changed or was new, and BLE is enabled, we might want to reconnect
+                if oldToken != bleToken && AppState.shared.isBLEEnabled {
+                    BLECentralManager.shared.startScanning()
+                }
+            }
+
             if UserDefaults.standard.hasPairedDeviceOnce == false {
                 UserDefaults.standard.hasPairedDeviceOnce = true
             }
@@ -254,6 +265,34 @@ extension WebSocketServer {
         {
             let albumArt = (music["albumArt"] as? String) ?? ""
             let likeStatus = (music["likeStatus"] as? String) ?? "none"
+            let isBuffering = (music["isBuffering"] as? Bool) ?? false
+
+            // Android sends duration/position in ms; convert to seconds.
+            // Using NSNumber because Swift's `as? Double` fails if the JSON parser inferred an Int.
+            let durationSec = (music["duration"] as? NSNumber).map { $0.doubleValue / 1000.0 } ?? -1.0
+            var positionSec = (music["position"] as? NSNumber).map { $0.doubleValue / 1000.0 } ?? -1.0
+
+            // Timestamp-based position correction:
+            // Android includes the wall-clock ms when the position snapshot was taken.
+            // We add the elapsed time since then (which includes WiFi transit) to get a
+            // much more accurate "current" position — effectively NTP-style compensation.
+            // Clamp: only correct for realistic WiFi delays (< 5s). Larger deltas likely
+            // indicate clock skew between devices, which would worsen accuracy if applied.
+            if positionSec >= 0, playing, !isBuffering,
+               let tsMs = music["positionTimestamp"] as? NSNumber {
+                let capturedAt = tsMs.doubleValue / 1000.0
+                let nowSec = Date().timeIntervalSince1970
+                let networkDelta = nowSec - capturedAt
+                if networkDelta > -2.0 && networkDelta < 5.0 {
+                    positionSec += max(0.0, networkDelta)
+                }
+            }
+            // Clamp to duration to prevent the seekbar going past the end
+            if durationSec > 0 && positionSec > durationSec {
+                positionSec = durationSec
+            }
+
+            let oldTitle = AppState.shared.status?.music?.title
 
             AppState.shared.status = DeviceStatus(
                 battery: .init(level: level, isCharging: isCharging),
@@ -265,9 +304,46 @@ extension WebSocketServer {
                     volume: volume,
                     isMuted: isMuted,
                     albumArt: albumArt,
-                    likeStatus: likeStatus
+                    likeStatus: likeStatus,
+                    duration: durationSec,
+                    position: positionSec,
+                    isBuffering: isBuffering
                 )
             )
+
+            DispatchQueue.main.async {
+                if oldTitle != title {
+                    AppState.shared.handleTrackChange()
+                } else {
+                    AppState.shared.syncMediaPosition(incoming: positionSec)
+                }
+            }
+
+            // Only publish to macOS Control Center / boringNotch when the user opts in,
+            // because it requires a silent background audio track which can cause multipoint
+            // Bluetooth headphones to route audio focus to the Mac.
+            if UserDefaults.standard.showInControlCenter {
+                var npInfo = NowPlayingInfo()
+                npInfo.title = title
+                npInfo.artist = artist
+                npInfo.isPlaying = playing
+                if let data = Data(base64Encoded: albumArt) {
+                    npInfo.artworkData = data
+                }
+                // Seekbar: Android sends duration/position in ms; MPNowPlayingInfoCenter needs seconds.
+                // positionMs uses optDouble so missing/null safely falls back to -1.
+                // NOTE: Use NSNumber because Swift's JSON parser returns an Int type for flat numbers.
+                if let nsNum = music["duration"] as? NSNumber, nsNum.doubleValue > 0 {
+                    npInfo.duration = nsNum.doubleValue / 1000.0
+                }
+                if let pMs = music["position"] as? NSNumber, pMs.doubleValue >= 0 {
+                    npInfo.elapsedTime = pMs.doubleValue / 1000.0
+                }
+                NowPlayingPublisher.shared.update(info: npInfo)
+            } else {
+                // If the setting is off, ensure any previously running session is cleared
+                NowPlayingPublisher.shared.clear()
+            }
         }
     }
 
@@ -591,23 +667,33 @@ extension WebSocketServer {
         }
     }
 
-    private func handleMacMediaControlRequest(_ message: Message) {
+    func handleMacMediaControlRequest(_ message: Message) {
         if let dict = message.data.value as? [String: Any],
            let action = dict["action"] as? String {
-            handleMacMediaControl(action: action)
+            handleMediaControl(action: action)
         }
     }
 
-    private func handleMacMediaControl(action: String) {
+    func handleMediaControl(action: String) {
         switch action {
         case "play": NowPlayingCLI.shared.play()
         case "pause": NowPlayingCLI.shared.pause()
         case "previous": NowPlayingCLI.shared.previous()
         case "next": NowPlayingCLI.shared.next()
         case "stop": NowPlayingCLI.shared.stop()
+        case "playPause": NowPlayingCLI.shared.toggle()
         default: break
         }
         sendMacMediaControlResponse(action: action, success: true)
+    }
+    
+    func handleVolumeControl(action: String) {
+        switch action {
+        case "up", "vol_up": MacRemoteManager.shared.increaseVolume()
+        case "down", "vol_down": MacRemoteManager.shared.decreaseVolume()
+        case "mute", "vol_mute": MacRemoteManager.shared.toggleMute()
+        default: break
+        }
     }
 
     private func handleNotificationUpdate(_ message: Message) {
