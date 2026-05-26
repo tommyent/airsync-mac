@@ -60,25 +60,27 @@ struct ScreenView: View {
                         modifiers: .command
                      )
 
-                    GlassButtonView(
-                        label: "Browse",
-                        systemImage: "folder",
-                        iconOnly: true,
-                        action: {
-                            if appState.isPlus && appState.licenseCheck {
-                                appState.openFileBrowser()
-                            } else {
-                                showingPlusPopover = true
+                    if appState.device?.ipAddress != "BLE" {
+                        GlassButtonView(
+                            label: "Browse",
+                            systemImage: "folder",
+                            iconOnly: true,
+                            action: {
+                                if appState.isPlus && appState.licenseCheck {
+                                    appState.openFileBrowser()
+                                } else {
+                                    showingPlusPopover = true
+                                }
                             }
+                        )
+                        .transition(.identity)
+                        .keyboardShortcut(
+                            "b",
+                            modifiers: .command
+                        )
+                        .popover(isPresented: $showingPlusPopover, arrowEdge: .bottom) {
+                            PlusFeaturePopover(message: "Browse files with AirSync+")
                         }
-                    )
-                    .transition(.identity)
-                    .keyboardShortcut(
-                        "b",
-                        modifiers: .command
-                    )
-                    .popover(isPresented: $showingPlusPopover, arrowEdge: .bottom) {
-                        PlusFeaturePopover(message: "Browse files with AirSync+")
                     }
 
                     GlassButtonView(
@@ -124,24 +126,34 @@ struct ScreenView: View {
     private func sendClipboard() {
         let pasteboard = NSPasteboard.general
         if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], let firstUrl = urls.first {
-            DispatchQueue.global(qos: .userInitiated).async {
-                WebSocketServer.shared.sendFile(url: firstUrl, isClipboard: true)
+            if appState.device?.ipAddress != "BLE" {
+                DispatchQueue.global(qos: .userInitiated).async {
+                    WebSocketServer.shared.sendFile(url: firstUrl, isClipboard: true)
+                }
+            } else {
+                print("[ScreenView] Cannot send files over BLE")
             }
         } else if let image = NSImage(pasteboard: pasteboard) {
-            let tempDir = FileManager.default.temporaryDirectory
-            let tempUrl = tempDir.appendingPathComponent("clipboard_image_\(Int(Date().timeIntervalSince1970)).png")
-            if let tiffData = image.tiffRepresentation,
-               let bitmap = NSBitmapImageRep(data: tiffData),
-               let pngData = bitmap.representation(using: .png, properties: [:]) {
-                do {
-                    try pngData.write(to: tempUrl)
-                    DispatchQueue.global(qos: .userInitiated).async {
-                        WebSocketServer.shared.sendFile(url: tempUrl, isClipboard: true)
+            if appState.device?.ipAddress != "BLE" {
+                let tempDir = FileManager.default.temporaryDirectory
+                let tempUrl = tempDir.appendingPathComponent("clipboard_image_\(Int(Date().timeIntervalSince1970)).png")
+                if let tiffData = image.tiffRepresentation,
+                   let bitmap = NSBitmapImageRep(data: tiffData),
+                   let pngData = bitmap.representation(using: .png, properties: [:]) {
+                    do {
+                        try pngData.write(to: tempUrl)
+                        DispatchQueue.global(qos: .userInitiated).async {
+                            WebSocketServer.shared.sendFile(url: tempUrl, isClipboard: true)
+                        }
+                    } catch {
+                        print("[ScreenView] Failed to save clipboard image: \(error)")
                     }
-                } catch {
-                    print("[ScreenView] Failed to save clipboard image: \(error)")
                 }
+            } else {
+                print("[ScreenView] Cannot send images over BLE")
             }
+        } else if let text = pasteboard.string(forType: .string) {
+            appState.sendClipboardToAndroid(text: text)
         }
     }
 }

@@ -72,7 +72,12 @@ extension WebSocketServer {
             }
         case "volumeControl":
             if let action = data["action"] as? String {
-                BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charMediaControl, payload: action)
+                if action == "setVolume", let volume = data["volume"] as? Int {
+                    let payload = "setVolume|\(volume)"
+                    BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charMediaControl, payload: payload)
+                } else {
+                    BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charMediaControl, payload: action)
+                }
             }
         case "callControl":
             if let action = data["action"] as? String {
