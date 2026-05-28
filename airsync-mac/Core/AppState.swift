@@ -282,6 +282,7 @@ class AppState: ObservableObject {
         }
     }
     @Published var shouldRefreshQR: Bool = false
+    @Published var isConnectionWeak: Bool = false
     @Published var webSocketStatus: WebSocketStatus = .stopped
     @Published var selectedTab: TabIdentifier = .qr
     @Published var selectedSettingsTab: SettingsTab = .myMac
@@ -964,6 +965,7 @@ class AppState: ObservableObject {
 
             // Then locally reset state
             self.device = nil
+            self.isConnectionWeak = false
             self.activeMacIp = nil
             self.notifications.removeAll()
             self.status = nil

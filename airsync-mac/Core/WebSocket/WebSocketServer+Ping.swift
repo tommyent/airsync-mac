@@ -55,7 +55,23 @@ extension WebSocketServer {
             let lastDate = self.lastActivity[sessionId] ?? .distantPast
             self.lock.unlock()
             
-            let isStale = now.timeIntervalSince(lastDate) > timeout
+            let timeSinceLastActivity = now.timeIntervalSince(lastDate)
+            let isStale = timeSinceLastActivity > timeout
+            
+            let isPrimary = (sessionId == primary)
+            if isPrimary && !isStale {
+                let isWeak = timeSinceLastActivity > 15.0
+                DispatchQueue.main.async {
+                    if AppState.shared.isConnectionWeak != isWeak {
+                        AppState.shared.isConnectionWeak = isWeak
+                        if isWeak {
+                            print("[websocket] Primary session connection is weak. Time since last activity: \(Int(timeSinceLastActivity))s")
+                        } else {
+                            print("[websocket] Primary session connection recovered.")
+                        }
+                    }
+                }
+            }
             
             if isStale {
                 let isPrimary = (sessionId == primary)
