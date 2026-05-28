@@ -59,7 +59,7 @@
   "quickshare.copy": "In die Zwischenablage kopieren",
   "settings.menubar.showIcon": "Menüleistensymbol anzeigen",
   "settings.menubar.showText": "Menüleistentext anzeigen",
-  "settings.menubar.maxLength": "Maximale Länge",
+  "settings.menubar.maxLength": "Textbreite",
   "settings.menubar.showDeviceName": "Gerätenamen anzeigen",
   "settings.menubar.showBattery": "Batteriesymbol anzeigen",
   "settings.menubar.showMusic": "Jetzt läuft",

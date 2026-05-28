@@ -47,7 +47,8 @@ class AppState: ObservableObject {
         self.showMenubarDeviceName = UserDefaults.standard.object(forKey: "showMenubarDeviceName") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarDeviceName")
 
         let savedMaxLength = UserDefaults.standard.integer(forKey: "menubarTextMaxLength")
-        self.menubarTextMaxLength = savedMaxLength > 0 ? savedMaxLength : 30
+        // Values < 50 are from the old char-count era; migrate them to the new point-width default
+        self.menubarTextMaxLength = (savedMaxLength >= 50) ? savedMaxLength : 150
 
         self.showMenubarIcon = UserDefaults.standard.object(forKey: "showMenubarIcon") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarIcon")
         self.menubarBatteryStyle = UserDefaults.standard.string(forKey: "menubarBatteryStyle") ?? "both"
@@ -59,6 +60,7 @@ class AppState: ObservableObject {
             self.showMenubarCallDetails = UserDefaults.standard.bool(forKey: "showMenubarCallDetails") && (!licenseCheck || isPlusLoaded)
         }
         self.menubarFontSize = UserDefaults.standard.object(forKey: "menubarFontSize") == nil ? 12.0 : UserDefaults.standard.double(forKey: "menubarFontSize")
+        self.enableMarquee = UserDefaults.standard.bool(forKey: "enableMarquee")
         self.menubarUnreadBadgeStyle = UserDefaults.standard.string(forKey: "menubarUnreadBadgeStyle") ?? "badge"
         self.menubarUnreadBadgeColor = UserDefaults.standard.string(forKey: "menubarUnreadBadgeColor") ?? "accent"
         self.showMenubarPillStroke = UserDefaults.standard.bool(forKey: "showMenubarPillStroke")
@@ -340,6 +342,12 @@ class AppState: ObservableObject {
     @Published var menubarTextMaxLength: Int {
         didSet {
             UserDefaults.standard.set(menubarTextMaxLength, forKey: "menubarTextMaxLength")
+        }
+    }
+
+    @Published var enableMarquee: Bool {
+        didSet {
+            UserDefaults.standard.set(enableMarquee, forKey: "enableMarquee")
         }
     }
 
