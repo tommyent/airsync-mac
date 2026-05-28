@@ -951,7 +951,7 @@ class AppState: ObservableObject {
             withAnimation {
                 self.notifications.removeAll { $0.id == notif.id }
             }
-            self.removeNotification(notif)
+            UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [notif.nid])
         }
     }
 
