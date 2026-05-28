@@ -1066,12 +1066,19 @@ class AppState: ObservableObject {
 
     func addNotification(_ notif: Notification) {
         DispatchQueue.main.async {
+            var contentChanged = true
             withAnimation {
-                self.notifications.insert(notif, at: 0)
+                if let idx = self.notifications.firstIndex(where: { $0.nid == notif.nid }) {
+                    let old = self.notifications[idx]
+                    contentChanged = (old.title != notif.title || old.body != notif.body || old.actions != notif.actions)
+                    self.notifications[idx] = notif
+                } else {
+                    self.notifications.insert(notif, at: 0)
+                }
             }
-            // Trigger native macOS notification if not silent
+            // Trigger native macOS notification if not silent and content actually changed/new
             // Default to alerting if priority is missing (backwards compatibility)
-            if notif.priority != "silent" {
+            if notif.priority != "silent" && contentChanged {
                 var appIcon: NSImage? = nil
                 if let iconPath = self.androidApps[notif.package]?.iconUrl {
                     appIcon = NSImage(contentsOfFile: iconPath)
