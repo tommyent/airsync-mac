@@ -1211,17 +1211,22 @@ class AppState: ObservableObject {
     }
 
     func syncWithSystemNotifications() {
-        UNUserNotificationCenter.current().getDeliveredNotifications { systemNotifs in
-            let systemNIDs = Set(systemNotifs.map { $0.request.identifier })
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized else {
+                return
+            }
+            UNUserNotificationCenter.current().getDeliveredNotifications { systemNotifs in
+                let systemNIDs = Set(systemNotifs.map { $0.request.identifier })
 
-            DispatchQueue.main.async {
-                // Only sync notifications that were actually posted to system (non-silent)
-                let currentSystemNIDs = Set(self.notifications.filter { $0.priority != "silent" }.map { $0.nid })
-                let removedNIDs = currentSystemNIDs.subtracting(systemNIDs)
+                DispatchQueue.main.async {
+                    // Only sync notifications that were actually posted to system (non-silent)
+                    let currentSystemNIDs = Set(self.notifications.filter { $0.priority != "silent" }.map { $0.nid })
+                    let removedNIDs = currentSystemNIDs.subtracting(systemNIDs)
 
-                for nid in removedNIDs {
-                    print("[state] (notification) System notification \(nid) was dismissed manually.")
-                    self.removeNotificationById(nid)
+                    for nid in removedNIDs {
+                        print("[state] (notification) System notification \(nid) was dismissed manually.")
+                        self.removeNotificationById(nid)
+                    }
                 }
             }
         }
