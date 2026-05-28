@@ -59,6 +59,7 @@
   "quickshare.done": "Gotowe",
   "quickshare.sending": "Wysyłanie...",
   "quickshare.receiving": "Odbieranie...",
+  "quickshare.connecting": "Connecting...",
   "quickshare.confirm_pin": "Potwierdź PIN na swoim urządzeniu",
   "quickshare.finished": "Przesłano pomyślnie!",
   "quickshare.failed": "Przesyłanie nieudane",
