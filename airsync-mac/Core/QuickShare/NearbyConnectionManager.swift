@@ -333,6 +333,7 @@ public class NearbyConnectionManager : NSObject, NetServiceDelegate, InboundNear
 		if discoveryRefCount==0{
 			browser?.cancel()
 			browser=nil
+			foundServices.removeAll()
 		}
 	}
 	
