@@ -111,56 +111,59 @@ class WhatsNewTourManager: ObservableObject {
     }
     
     func evaluateActiveItem() {
-        let appState = AppState.shared
-        
-        // Do not show any popovers until onboarding is fully completed
-        if UserDefaults.standard.needsOnboarding || appState.isOnboardingActive {
-            activeItem = nil
-            return
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            let appState = AppState.shared
+            
+            // Do not show any popovers until onboarding is fully completed
+            if UserDefaults.standard.needsOnboarding || appState.isOnboardingActive {
+                self.activeItem = nil
+                return
+            }
+            
+            // Settings Tab tour
+            if !self.isDismissed(.settings) && appState.selectedTab == .settings {
+                self.activeItem = .settings
+                return
+            }
+            
+            // Scan QR tour (when not connected and scanner view is active)
+            if !self.isDismissed(.scanQR) && appState.device == nil && appState.selectedTab == .qr {
+                self.activeItem = .scanQR
+                return
+            }
+            
+            // Nearby devices list tour (when not connected, scanner view is active, and nearby devices discovered)
+            if !self.isDismissed(.nearbyDevices) && appState.device == nil && appState.selectedTab == .qr && self.hasNearbyDevices {
+                self.activeItem = .nearbyDevices
+                return
+            }
+            
+            // Connection status pill tour (when connected, settings tab not active, home/screen view active)
+            if !self.isDismissed(.connectionPill) && appState.device != nil && appState.selectedTab != .settings {
+                self.activeItem = .connectionPill
+                return
+            }
+            
+            // Desktop Mode button tour (when connected, adb connected, settings tab not active, home/screen view active)
+            if !self.isDismissed(.desktopMode) && appState.device != nil && appState.adbConnected && appState.selectedTab != .settings {
+                self.activeItem = .desktopMode
+                return
+            }
+            
+            // Notifications list tour (when connected, notifications tab is active, and there's at least one notification)
+            if !self.isDismissed(.firstNotification) && appState.device != nil && appState.selectedTab == .notifications && !appState.notifications.isEmpty {
+                self.activeItem = .firstNotification
+                return
+            }
+            
+            // Apps grid tour (when connected, apps tab is active)
+            if !self.isDismissed(.appsGrid) && appState.device != nil && appState.selectedTab == .apps {
+                self.activeItem = .appsGrid
+                return
+            }
+            
+            self.activeItem = nil
         }
-        
-        // Settings Tab tour
-        if !isDismissed(.settings) && appState.selectedTab == .settings {
-            activeItem = .settings
-            return
-        }
-        
-        // Scan QR tour (when not connected and scanner view is active)
-        if !isDismissed(.scanQR) && appState.device == nil && appState.selectedTab == .qr {
-            activeItem = .scanQR
-            return
-        }
-        
-        // Nearby devices list tour (when not connected, scanner view is active, and nearby devices discovered)
-        if !isDismissed(.nearbyDevices) && appState.device == nil && appState.selectedTab == .qr && hasNearbyDevices {
-            activeItem = .nearbyDevices
-            return
-        }
-        
-        // Connection status pill tour (when connected, settings tab not active, home/screen view active)
-        if !isDismissed(.connectionPill) && appState.device != nil && appState.selectedTab != .settings {
-            activeItem = .connectionPill
-            return
-        }
-        
-        // Desktop Mode button tour (when connected, adb connected, settings tab not active, home/screen view active)
-        if !isDismissed(.desktopMode) && appState.device != nil && appState.adbConnected && appState.selectedTab != .settings {
-            activeItem = .desktopMode
-            return
-        }
-        
-        // Notifications list tour (when connected, notifications tab is active, and there's at least one notification)
-        if !isDismissed(.firstNotification) && appState.device != nil && appState.selectedTab == .notifications && !appState.notifications.isEmpty {
-            activeItem = .firstNotification
-            return
-        }
-        
-        // Apps grid tour (when connected, apps tab is active)
-        if !isDismissed(.appsGrid) && appState.device != nil && appState.selectedTab == .apps {
-            activeItem = .appsGrid
-            return
-        }
-        
-        activeItem = nil
     }
 }
