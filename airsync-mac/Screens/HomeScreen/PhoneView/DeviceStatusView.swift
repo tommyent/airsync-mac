@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 struct DeviceStatusView: View {
     @ObservedObject var appState = AppState.shared
@@ -74,10 +75,23 @@ struct DeviceStatusView: View {
                                         if !editing {
                                             WebSocketServer.shared.setVolume(Int(tempVolume))
                                         }
+                                        if editing {
+                                            NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
+                                        } else {
+                                            NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
+                                        }
                                         isDragging = editing
                                     }
                                 )
                                 .focusable(false)
+                                .onChange(of: tempVolume) { oldValue, newValue in
+                                    guard isDragging else { return }
+                                    let lastTick = floor(oldValue / 5.0) * 5.0
+                                    let currentTick = floor(newValue / 5.0) * 5.0
+                                    if currentTick != lastTick {
+                                        NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .default)
+                                    }
+                                }
 
                                 Image(systemName: "speaker.wave.3.fill")
                             }

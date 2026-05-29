@@ -1,10 +1,13 @@
 import SwiftUI
+import AppKit
 
 struct MenubarSettingsView: View {
     @ObservedObject var appState = AppState.shared
     @State private var showingPlusPopover = false
     @State private var plusPopoverMessage = ""
     @State private var showMarqueeInfo = false
+    @State private var isDraggingFontSize = false
+    @State private var isDraggingTextLength = false
 
     var body: some View {
         ScrollView {
@@ -17,10 +20,20 @@ struct MenubarSettingsView: View {
                         Slider(
                             value: $appState.menubarFontSize,
                             in: 10...16,
-                            step: 1
+                            step: 1,
+                            onEditingChanged: { editing in
+                                isDraggingFontSize = editing
+                                NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
+                            }
                         )
                         .frame(width: 150)
                         .controlSize(.small)
+                        .onChange(of: appState.menubarFontSize) { oldValue, newValue in
+                            guard isDraggingFontSize else { return }
+                            if newValue != oldValue {
+                                NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .default)
+                            }
+                        }
                         
                         Text("\(Int(appState.menubarFontSize))")
                             .font(.system(size: 11, design: .monospaced))
@@ -53,10 +66,20 @@ struct MenubarSettingsView: View {
                                         set: { appState.menubarTextMaxLength = Int($0) }
                                     ),
                                     in: 50...300,
-                                    step: 10
+                                    step: 10,
+                                    onEditingChanged: { editing in
+                                        isDraggingTextLength = editing
+                                        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
+                                    }
                                 )
                                 .frame(width: 150)
                                 .controlSize(.small)
+                                .onChange(of: appState.menubarTextMaxLength) { oldValue, newValue in
+                                    guard isDraggingTextLength else { return }
+                                    if newValue != oldValue {
+                                        NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .default)
+                                    }
+                                }
                                 
                                 Text("\(appState.menubarTextMaxLength)pt")
                                     .font(.system(size: 11, design: .monospaced))

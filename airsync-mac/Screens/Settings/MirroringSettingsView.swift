@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 struct MirroringSettingsView: View {
     @ObservedObject var appState = AppState.shared
@@ -21,6 +22,8 @@ struct MirroringSettingsView: View {
     @State private var tempBitrate: Double = 4.00
     @State private var tempResolution: Double = 1200.00
     @State private var isDragging = false
+    @State private var isDraggingBitrate = false
+    @State private var isDraggingResolution = false
     @State private var xCoords: String = "0"
     @State private var yCoords: String = "0"
 
@@ -88,11 +91,23 @@ struct MirroringSettingsView: View {
                                     if !editing {
                                         AppState.shared.scrcpyBitrate = Int(tempBitrate)
                                     }
+                                    if editing {
+                                        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
+                                    } else {
+                                        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
+                                    }
+                                    isDraggingBitrate = editing
                                     isDragging = editing
                                 }
                             )
                             .focusable(false)
                             .frame(maxWidth: 150)
+                            .onChange(of: tempBitrate) { oldValue, newValue in
+                                guard isDraggingBitrate else { return }
+                                if newValue != oldValue {
+                                    NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .default)
+                                }
+                            }
 
                             Text(String(format: L("settings.mirroring.bitrateFormat"), AppState.shared.scrcpyBitrate))
                                 .monospacedDigit()
@@ -112,11 +127,23 @@ struct MirroringSettingsView: View {
                                     if !editing {
                                         AppState.shared.scrcpyResolution = Int(tempResolution)
                                     }
+                                    if editing {
+                                        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
+                                    } else {
+                                        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
+                                    }
+                                    isDraggingResolution = editing
                                     isDragging = editing
                                 }
                             )
                             .focusable(false)
                             .frame(maxWidth: 150)
+                            .onChange(of: tempResolution) { oldValue, newValue in
+                                guard isDraggingResolution else { return }
+                                if newValue != oldValue {
+                                    NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .default)
+                                }
+                            }
 
                             Text("\(AppState.shared.scrcpyResolution)")
                                 .monospacedDigit()
