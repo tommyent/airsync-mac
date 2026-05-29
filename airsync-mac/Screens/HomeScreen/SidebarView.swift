@@ -114,11 +114,21 @@ struct SidebarView: View {
                     .popover(isPresented: $showingPlusDesktopPopover, arrowEdge: .top) {
                         PlusFeaturePopover(message: "Desktop Mode is an AirSync+ feature")
                     }
+                    .whatsNewPopover(item: .desktopMode, arrowEdge: .top)
                 }
                 .padding(.top, 8)
                 .padding(.bottom, 12)
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
+        }
+        .onAppear {
+            WhatsNewTourManager.shared.evaluateActiveItem()
+        }
+        .onChange(of: appState.adbConnected) { _, _ in
+            WhatsNewTourManager.shared.evaluateActiveItem()
+        }
+        .onChange(of: appState.selectedTab) { _, _ in
+            WhatsNewTourManager.shared.evaluateActiveItem()
         }
     }
 }

@@ -36,6 +36,7 @@ struct QRScannerSidebarView: View {
                 Text("Scan to connect")
                     .font(.title3)
                     .fontWeight(.bold)
+                    .whatsNewPopover(item: .scanQR, arrowEdge: .trailing)
             .padding(.horizontal, 16)
             .padding(.top, 16)
 
@@ -164,6 +165,7 @@ struct QRScannerSidebarView: View {
         .padding(.horizontal, 8)
         .onAppear {
             qrManager.generateQRAsync()
+            WhatsNewTourManager.shared.evaluateActiveItem()
         }
         .onDisappear {
             qrManager.cleanUpTimer()

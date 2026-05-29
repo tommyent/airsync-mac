@@ -31,6 +31,16 @@ struct NotificationView: View {
                     .accessibilityHidden(notificationStacks)
                     .animation(.easeInOut(duration: 0.5), value: notificationStacks)
             }
+            .whatsNewPopover(item: .firstNotification, arrowEdge: .top)
+            .onAppear {
+                WhatsNewTourManager.shared.evaluateActiveItem()
+            }
+            .onChange(of: appState.notifications.count) { _, _ in
+                WhatsNewTourManager.shared.evaluateActiveItem()
+            }
+            .onChange(of: appState.selectedTab) { _, _ in
+                WhatsNewTourManager.shared.evaluateActiveItem()
+            }
         } else {
             NotificationEmptyView()
         }
