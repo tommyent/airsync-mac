@@ -103,7 +103,7 @@ struct SyncSettingsView: View {
                     }
 
                     HStack {
-                        Label("Fallback to mdns services", systemImage: "antenna.radiowaves.left.and.right")
+                        Label("Fallback to mDNS services", systemImage: "antenna.radiowaves.left.and.right")
                         Spacer()
                         Toggle("", isOn: $appState.fallbackToMdns)
                             .toggleStyle(.switch)
