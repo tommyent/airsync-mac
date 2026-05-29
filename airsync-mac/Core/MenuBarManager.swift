@@ -18,7 +18,7 @@ class MenuBarManager: NSObject {
     private var cancellables = Set<AnyCancellable>()
     private var appState = AppState.shared
     private var temporaryDragLabel: String?
-    private var hostingView: ClickThroughHostingView<MenubarStatusView>?
+    private var hostingView: ClickThroughHostingView?
     
     private let statusButton: MenuBarStatusButton = {
         let view = MenuBarStatusButton(frame: NSRect(x: 0, y: 0, width: 22, height: 22))
@@ -289,7 +289,7 @@ class MenuBarStatusButton: NSView {
 }
 
 // MARK: - Click-Through Hosting View Subclass
-class ClickThroughHostingView<Content: View>: NSHostingView<Content> {
+class ClickThroughHostingView: NSHostingView<MenubarStatusView> {
     override func hitTest(_ point: NSPoint) -> NSView? {
         return nil
     }
@@ -316,8 +316,14 @@ struct MenubarStatusView: View {
                 // 2. Status Text / Details
                 if appState.showMenubarText {
                     if let dragLabel = appState.temporaryDragLabel {
-                        Text(dragLabel)
-                            .font(.system(size: appState.menubarFontSize, weight: .medium))
+                        if appState.enableMarquee {
+                            MarqueeText(text: dragLabel, fontSize: appState.menubarFontSize, fontWeight: .medium, containerWidth: CGFloat(appState.menubarTextMaxLength))
+                        } else {
+                            Text(dragLabel)
+                                .font(.system(size: appState.menubarFontSize, weight: .medium))
+                                .lineLimit(1)
+                                .frame(maxWidth: CGFloat(appState.menubarTextMaxLength), alignment: .leading)
+                        }
                     } else {
                         HStack(spacing: 5) {
                             // Left part: Device Name or Music Info
@@ -354,9 +360,7 @@ struct MenubarStatusView: View {
                                         .layoutPriority(1)
                                 }
                             } else if showMusic, let music = appState.status?.music {
-                                let title = music.title.isEmpty ? "Unknown Title" : music.title
-                                let artist = music.artist.isEmpty ? "Unknown Artist" : music.artist
-                                let musicText = truncate(text: "\(title) - \(artist)")
+                                let musicText = "\(music.title) — \(music.artist)"
                                 
                                 HStack(spacing: 3) {
                                     if appState.showMenubarAlbumArt,
@@ -375,14 +379,27 @@ struct MenubarStatusView: View {
                                             .font(.system(size: appState.menubarFontSize))
                                             .foregroundColor(.accentColor)
                                     }
-                                    Text(musicText)
-                                        .font(.system(size: appState.menubarFontSize))
+                                    
+                                    if appState.enableMarquee {
+                                        MarqueeText(text: musicText, fontSize: appState.menubarFontSize, containerWidth: CGFloat(appState.menubarTextMaxLength))
+                                    } else {
+                                        Text(musicText)
+                                            .font(.system(size: appState.menubarFontSize))
+                                            .lineLimit(1)
+                                            .frame(maxWidth: CGFloat(appState.menubarTextMaxLength), alignment: .leading)
+                                    }
                                 }
                             } else if appState.showMenubarDeviceName {
                                 let deviceName = appState.device?.name ?? (bleManager.isAuthenticated ? bleManager.connectedDeviceName : nil) ?? ""
                                 if !deviceName.isEmpty {
-                                    Text(truncate(text: deviceName))
-                                        .font(.system(size: appState.menubarFontSize, weight: .medium))
+                                    if appState.enableMarquee {
+                                        MarqueeText(text: deviceName, fontSize: appState.menubarFontSize, fontWeight: .medium, containerWidth: CGFloat(appState.menubarTextMaxLength))
+                                    } else {
+                                        Text(deviceName)
+                                            .font(.system(size: appState.menubarFontSize, weight: .medium))
+                                            .lineLimit(1)
+                                            .frame(maxWidth: CGFloat(appState.menubarTextMaxLength), alignment: .leading)
+                                    }
                                 }
                             }
                             
@@ -529,11 +546,5 @@ struct MenubarStatusView: View {
         }
     }
     
-    private func truncate(text: String) -> String {
-        let maxLength = appState.menubarTextMaxLength
-        if text.count > maxLength {
-            return String(text.prefix(maxLength - 1)) + "…"
-        }
-        return text
-    }
+
 }

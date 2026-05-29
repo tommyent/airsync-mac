@@ -4,6 +4,7 @@ struct MenubarSettingsView: View {
     @ObservedObject var appState = AppState.shared
     @State private var showingPlusPopover = false
     @State private var plusPopoverMessage = ""
+    @State private var showMarqueeInfo = false
 
     var body: some View {
         ScrollView {
@@ -51,11 +52,34 @@ struct MenubarSettingsView: View {
                                         get: { Double(appState.menubarTextMaxLength) },
                                         set: { appState.menubarTextMaxLength = Int($0) }
                                     ),
-                                    in: 10...80,
-                                    step: 5
+                                    in: 50...300,
+                                    step: 10
                                 )
                                 .frame(width: 150)
                                 .controlSize(.small)
+                                
+                                Text("\(appState.menubarTextMaxLength)pt")
+                                    .font(.system(size: 11, design: .monospaced))
+                                    .foregroundColor(.secondary)
+                                    .frame(width: 36, alignment: .trailing)
+                            }
+
+                            HStack {
+                                Label(L("settings.menubar.enableMarquee"), systemImage: "play.right.to.left")
+                                Button(action: { showMarqueeInfo = true }) {
+                                    Image(systemName: "info.circle")
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.plain)
+                                .alert(L("settings.menubar.enableMarquee"), isPresented: $showMarqueeInfo) {
+                                    Button("OK", role: .cancel) {}
+                                } message: {
+                                    Text(L("settings.menubar.enableMarquee.info"))
+                                }
+                                
+                                Spacer()
+                                Toggle("", isOn: $appState.enableMarquee)
+                                    .toggleStyle(.switch)
                             }
 
                             HStack {
@@ -215,6 +239,7 @@ struct MenubarSettingsView: View {
             }
             .padding()
             .animation(.spring(), value: appState.showMenubarText)
+            .animation(.spring(), value: appState.enableMarquee)
             .animation(.spring(), value: appState.showMenubarIcon)
             .animation(.spring(), value: appState.menubarBatteryStyle)
             .animation(.spring(), value: appState.showMenubarMusicIcon)

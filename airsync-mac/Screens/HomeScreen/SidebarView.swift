@@ -23,7 +23,7 @@ struct SidebarView: View {
                 Text(truncated)
                     .font(.title3)
             }
-            .padding(6)
+            .padding(.bottom, 6)
 
             if let deviceVersion = appState.device?.version,
                appState.device?.ipAddress != "BLE",

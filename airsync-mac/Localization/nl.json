@@ -59,7 +59,7 @@
   "quickshare.copy": "Kopieer naar klembord",
   "settings.menubar.showIcon": "Show Menu Bar Icon",
   "settings.menubar.showText": "Show Menu Bar Text",
-  "settings.menubar.maxLength": "Max Length",
+  "settings.menubar.maxLength": "Text Width",
   "settings.menubar.showDeviceName": "Show Device Name",
   "settings.menubar.showBattery": "Show Battery Icon",
   "settings.menubar.showMusic": "Nu afspelen",

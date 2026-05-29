@@ -47,7 +47,8 @@ class AppState: ObservableObject {
         self.showMenubarDeviceName = UserDefaults.standard.object(forKey: "showMenubarDeviceName") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarDeviceName")
 
         let savedMaxLength = UserDefaults.standard.integer(forKey: "menubarTextMaxLength")
-        self.menubarTextMaxLength = savedMaxLength > 0 ? savedMaxLength : 30
+        // Values < 50 are from the old char-count era; migrate them to the new point-width default
+        self.menubarTextMaxLength = (savedMaxLength >= 50) ? savedMaxLength : 150
 
         self.showMenubarIcon = UserDefaults.standard.object(forKey: "showMenubarIcon") == nil ? true : UserDefaults.standard.bool(forKey: "showMenubarIcon")
         self.menubarBatteryStyle = UserDefaults.standard.string(forKey: "menubarBatteryStyle") ?? "both"
@@ -59,6 +60,7 @@ class AppState: ObservableObject {
             self.showMenubarCallDetails = UserDefaults.standard.bool(forKey: "showMenubarCallDetails") && (!licenseCheck || isPlusLoaded)
         }
         self.menubarFontSize = UserDefaults.standard.object(forKey: "menubarFontSize") == nil ? 12.0 : UserDefaults.standard.double(forKey: "menubarFontSize")
+        self.enableMarquee = UserDefaults.standard.bool(forKey: "enableMarquee")
         self.menubarUnreadBadgeStyle = UserDefaults.standard.string(forKey: "menubarUnreadBadgeStyle") ?? "badge"
         self.menubarUnreadBadgeColor = UserDefaults.standard.string(forKey: "menubarUnreadBadgeColor") ?? "accent"
         self.showMenubarPillStroke = UserDefaults.standard.bool(forKey: "showMenubarPillStroke")
@@ -282,6 +284,7 @@ class AppState: ObservableObject {
         }
     }
     @Published var shouldRefreshQR: Bool = false
+    @Published var isConnectionWeak: Bool = false
     @Published var webSocketStatus: WebSocketStatus = .stopped
     @Published var selectedTab: TabIdentifier = .qr
     @Published var selectedSettingsTab: SettingsTab = .myMac
@@ -339,6 +342,12 @@ class AppState: ObservableObject {
     @Published var menubarTextMaxLength: Int {
         didSet {
             UserDefaults.standard.set(menubarTextMaxLength, forKey: "menubarTextMaxLength")
+        }
+    }
+
+    @Published var enableMarquee: Bool {
+        didSet {
+            UserDefaults.standard.set(enableMarquee, forKey: "enableMarquee")
         }
     }
 
@@ -942,7 +951,7 @@ class AppState: ObservableObject {
             withAnimation {
                 self.notifications.removeAll { $0.id == notif.id }
             }
-            self.removeNotification(notif)
+            UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [notif.nid])
         }
     }
 
@@ -964,6 +973,7 @@ class AppState: ObservableObject {
 
             // Then locally reset state
             self.device = nil
+            self.isConnectionWeak = false
             self.activeMacIp = nil
             self.notifications.removeAll()
             self.status = nil
@@ -1056,12 +1066,19 @@ class AppState: ObservableObject {
 
     func addNotification(_ notif: Notification) {
         DispatchQueue.main.async {
+            var contentChanged = true
             withAnimation {
-                self.notifications.insert(notif, at: 0)
+                if let idx = self.notifications.firstIndex(where: { $0.nid == notif.nid }) {
+                    let old = self.notifications[idx]
+                    contentChanged = (old.title != notif.title || old.body != notif.body || old.actions != notif.actions)
+                    self.notifications[idx] = notif
+                } else {
+                    self.notifications.insert(notif, at: 0)
+                }
             }
-            // Trigger native macOS notification if not silent
+            // Trigger native macOS notification if not silent and content actually changed/new
             // Default to alerting if priority is missing (backwards compatibility)
-            if notif.priority != "silent" {
+            if notif.priority != "silent" && contentChanged {
                 var appIcon: NSImage? = nil
                 if let iconPath = self.androidApps[notif.package]?.iconUrl {
                     appIcon = NSImage(contentsOfFile: iconPath)
@@ -1194,17 +1211,22 @@ class AppState: ObservableObject {
     }
 
     func syncWithSystemNotifications() {
-        UNUserNotificationCenter.current().getDeliveredNotifications { systemNotifs in
-            let systemNIDs = Set(systemNotifs.map { $0.request.identifier })
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized else {
+                return
+            }
+            UNUserNotificationCenter.current().getDeliveredNotifications { systemNotifs in
+                let systemNIDs = Set(systemNotifs.map { $0.request.identifier })
 
-            DispatchQueue.main.async {
-                // Only sync notifications that were actually posted to system (non-silent)
-                let currentSystemNIDs = Set(self.notifications.filter { $0.priority != "silent" }.map { $0.nid })
-                let removedNIDs = currentSystemNIDs.subtracting(systemNIDs)
+                DispatchQueue.main.async {
+                    // Only sync notifications that were actually posted to system (non-silent)
+                    let currentSystemNIDs = Set(self.notifications.filter { $0.priority != "silent" }.map { $0.nid })
+                    let removedNIDs = currentSystemNIDs.subtracting(systemNIDs)
 
-                for nid in removedNIDs {
-                    print("[state] (notification) System notification \(nid) was dismissed manually.")
-                    self.removeNotificationById(nid)
+                    for nid in removedNIDs {
+                        print("[state] (notification) System notification \(nid) was dismissed manually.")
+                        self.removeNotificationById(nid)
+                    }
                 }
             }
         }

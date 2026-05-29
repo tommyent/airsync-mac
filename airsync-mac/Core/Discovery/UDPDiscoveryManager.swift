@@ -71,7 +71,13 @@ class UDPDiscoveryManager: ObservableObject {
     // MARK: - Smart Triggers
     
     private func startMonitoring() {
-        // 1. System Wake
+        // 1. System Sleep / Wake
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(handleSystemSleep),
+            name: NSWorkspace.willSleepNotification,
+            object: nil
+        )
         NSWorkspace.shared.notificationCenter.addObserver(
             self,
             selector: #selector(handleSystemWake),
@@ -80,6 +86,10 @@ class UDPDiscoveryManager: ObservableObject {
         )
         
         // 2. Network Change
+        setupNetworkPathMonitor()
+    }
+    
+    private func setupNetworkPathMonitor() {
         networkMonitor = NWPathMonitor()
         networkMonitor?.pathUpdateHandler = { [weak self] path in
             guard let self = self else { return }
@@ -107,8 +117,22 @@ class UDPDiscoveryManager: ObservableObject {
         networkMonitor = nil
     }
     
+    @objc private func handleSystemSleep() {
+        print("[Discovery] System going to sleep – suspending discovery network triggers")
+        networkChangePendingWork?.cancel()
+        networkMonitor?.cancel()
+        networkMonitor = nil
+        
+        // Cancel the periodic broadcast timer by temporarily stopping listening
+        stopListening()
+    }
+    
     @objc private func handleSystemWake() {
-        print("[Discovery] System wake detected")
+        print("[Discovery] System wake detected – resuming discovery network triggers")
+        setupNetworkPathMonitor()
+        if isListening {
+            startListening()
+        }
         broadcastBurst()
     }
     

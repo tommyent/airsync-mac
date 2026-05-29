@@ -172,6 +172,11 @@ class WebSocketServer: ObservableObject {
                     self.lock.lock()
                     self.lastActivity[ObjectIdentifier(session)] = Date()
                     self.lock.unlock()
+                    DispatchQueue.main.async {
+                        if AppState.shared.isConnectionWeak {
+                            AppState.shared.isConnectionWeak = false
+                        }
+                    }
                     return
                 }
 
@@ -181,6 +186,11 @@ class WebSocketServer: ObservableObject {
                         self.lock.lock()
                         self.lastActivity[ObjectIdentifier(session)] = Date()
                         self.lock.unlock()
+                        DispatchQueue.main.async {
+                            if AppState.shared.isConnectionWeak {
+                                AppState.shared.isConnectionWeak = false
+                            }
+                        }
                         
                         if message.type == .fileChunk || message.type == .fileChunkAck || message.type == .fileTransferComplete || message.type == .fileTransferInit {
                              self.handleMessage(message, session: session)
@@ -196,6 +206,11 @@ class WebSocketServer: ObservableObject {
                 self?.lock.lock()
                 self?.lastActivity[ObjectIdentifier(session)] = Date()
                 self?.lock.unlock()
+                DispatchQueue.main.async {
+                    if AppState.shared.isConnectionWeak {
+                        AppState.shared.isConnectionWeak = false
+                    }
+                }
             },
             connected: { [weak self] session in
                 guard let self = self else { return }

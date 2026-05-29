@@ -59,7 +59,7 @@
   "quickshare.copy": "Copier dans le presse-papiers",
   "settings.menubar.showIcon": "Afficher l'icône de la barre de menus",
   "settings.menubar.showText": "Afficher le texte de la barre de menus",
-  "settings.menubar.maxLength": "Longueur maximale",
+  "settings.menubar.maxLength": "Largeur du texte",
   "settings.menubar.showDeviceName": "Afficher le nom de l'appareil",
   "settings.menubar.showBattery": "Afficher l'icône de batterie",
   "settings.menubar.showMusic": "En cours de lecture",
