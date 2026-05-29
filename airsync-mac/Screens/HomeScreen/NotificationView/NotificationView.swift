@@ -70,6 +70,14 @@ struct NotificationView: View {
             .onChange(of: appState.selectedTab) { _, _ in
                 WhatsNewTourManager.shared.evaluateActiveItem()
             }
+            .sheet(item: Binding(
+                get: { appState.configuringLaunchPreferenceFor.map { NotifConfigureTarget(id: $0) } },
+                set: { appState.configuringLaunchPreferenceFor = $0?.id }
+            )) { target in
+                if let app = appState.androidApps[target.id] {
+                    AppNotificationSettingsView(app: app)
+                }
+            }
         } else {
             NotificationEmptyView()
         }
@@ -204,23 +212,13 @@ struct NotificationView: View {
     private func notificationRowWithTap(for notif: Notification) -> some View {
         notificationRow(for: notif)
             .onTapGesture {
-                handleNotificationTap(notif)
+                appState.handleNotificationTap(notif)
             }
     }
+}
 
-    private func handleNotificationTap(_ notif: Notification) {
-        if appState.device != nil && appState.adbConnected &&
-           notif.package != "" &&
-           notif.package != "com.sameerasw.airsync" &&
-           appState.mirroringPlus {
-            ADBConnector.startScrcpy(
-                ip: appState.device?.ipAddress ?? "",
-                port: appState.adbPort,
-                deviceName: appState.device?.name ?? "My Phone",
-                package: notif.package
-            )
-        }
-    }
+private struct NotifConfigureTarget: Identifiable {
+    let id: String
 }
 
 #Preview {

@@ -21,6 +21,10 @@ struct MenuBarNotificationsListView: View {
                 )
                 .padding(6)
                 .segmentStyle()
+                .onTapGesture {
+                    appState.handleNotificationTap(notif)
+                    MenuBarManager.shared.hidePopover()
+                }
             }
             
             if appState.notifications.count > 0 {
