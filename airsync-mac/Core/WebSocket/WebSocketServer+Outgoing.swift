@@ -72,7 +72,23 @@ extension WebSocketServer {
             }
         case "volumeControl":
             if let action = data["action"] as? String {
-                BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charMediaControl, payload: action)
+                if action == "setVolume", let volume = data["volume"] as? Int {
+                    let payload = "setVolume|\(volume)"
+                    BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charMediaControl, payload: payload)
+                } else {
+                    BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charMediaControl, payload: action)
+                }
+            }
+        case "callControl":
+            if let action = data["action"] as? String {
+                let bleAction: String
+                switch action {
+                case "accept": bleAction = "callAccept"
+                case "decline": bleAction = "callDecline"
+                case "end": bleAction = "callEnd"
+                default: bleAction = action
+                }
+                BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charMediaControl, payload: bleAction)
             }
         case "clipboardUpdate":
             if let content = data["content"] as? String {
@@ -111,6 +127,11 @@ extension WebSocketServer {
                 ].joined(separator: BLEConstants.delimiter)
                 
                 BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charMacMediaState, payload: payload)
+            }
+        case "toggleAppNotif":
+            if let package = data["package"] as? String, let state = data["state"] as? String {
+                let payload = "toggleNotif|\(package)|\(state)"
+                BLECentralManager.shared.writeChunked(characteristicUUID: BLEConstants.charMediaControl, payload: payload)
             }
         case "disconnectRequest":
             // Maybe handle disconnect?
@@ -177,11 +198,33 @@ extension WebSocketServer {
     func like() { sendMediaAction("like") }
     func unlike() { sendMediaAction("unlike") }
 
+    /// Seek Android playback to a specific position (in seconds).
+    func seekTo(positionSeconds: Double) {
+        let positionMs = Int(positionSeconds * 1000)
+        sendMessage(type: "mediaControl", data: ["action": "seekTo", "positionMs": positionMs])
+    }
+
     private func sendMediaAction(_ action: String) {
         sendMessage(type: "mediaControl", data: ["action": action])
         
         // Also send via BLE
         BLETransportBridge.shared.sendMediaControl(action)
+    }
+
+    /// Forward a system media command (from MPRemoteCommandCenter) back to Android.
+    /// - action: "play", "pause", "playPause", "nextTrack", "previousTrack"
+    func sendAndroidMediaControl(action: String) {
+        // Map MPRemoteCommandCenter-style names to the Android protocol's action names
+        let androidAction: String
+        switch action {
+        case "play":          androidAction = "play"
+        case "pause":         androidAction = "pause"
+        case "playPause":     androidAction = "playPause"
+        case "nextTrack":     androidAction = "next"
+        case "previousTrack": androidAction = "previous"
+        default:              androidAction = action
+        }
+        sendMediaAction(androidAction)
     }
 
     // MARK: - Volume Controls
@@ -302,32 +345,20 @@ extension WebSocketServer {
     }
 
     func sendCallAction(eventId: String, action: String) {
-        let keyCode: String
+        let commandAction: String
         switch action.lowercased() {
-        case "accept": keyCode = "5"
-        case "decline", "end": keyCode = "6"
-        default: keyCode = "6"
+        case "accept":
+            commandAction = "accept"
+        case "decline":
+            commandAction = "decline"
+        case "end":
+            commandAction = "end"
+        default:
+            commandAction = action.lowercased()
         }
         
-        DispatchQueue.global(qos: .userInitiated).async {
-            guard let adbPath = ADBConnector.findExecutable(named: "adb", fallbackPaths: ADBConnector.possibleADBPaths) else { return }
-            
-            let adbIP = AppState.shared.adbConnectedIP.isEmpty ? AppState.shared.device?.ipAddress ?? "" : AppState.shared.adbConnectedIP
-            if !adbIP.isEmpty {
-                let adbPort = AppState.shared.adbPort
-                let fullAddress = "\(adbIP):\(adbPort)"
-                let process = Process()
-                process.executableURL = URL(fileURLWithPath: adbPath)
-                process.arguments = ["-s", fullAddress, "shell", "input", "keyevent", keyCode]
-                
-                do {
-                    try process.run()
-                    process.waitUntilExit()
-                } catch {
-                    print("[websocket] Failed to send call action: \(error)")
-                }
-            }
-        }
+        // Natively send programmatic control command over WebSocket / BLE sync channel
+        sendMessage(type: "callControl", data: ["action": commandAction])
     }
 
     // MARK: - File Transfer (Mac -> Android)

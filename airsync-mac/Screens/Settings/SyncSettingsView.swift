@@ -13,6 +13,10 @@ struct SyncSettingsView: View {
     @State private var showingPlusPopover = false
     @State private var showRemoteSheet = false
 
+    @AppStorage("showInControlCenter") private var showInControlCenter = false
+    @State private var showControlCenterInfo = false
+    @State private var showPairingSheet = false
+
     // State for notification permissions
     @State private var notificationsGranted = false
     @State private var notificationsChecked = false
@@ -21,7 +25,18 @@ struct SyncSettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // 1. Wireless / Wired ADB
-                headerSection(title: "Connection & ADB", icon: "bolt.horizontal.circle")
+                HStack {
+                    headerSection(title: "Connection & ADB", icon: "bolt.horizontal.circle")
+                    Spacer()
+                    GlassButtonView(
+                        label: L("settings.newDevice"),
+                        systemImage: "qrcode",
+                        action: {
+                            showPairingSheet = true
+                        }
+                    )
+                    .padding(.trailing, 8)
+                }
                 VStack(spacing: 12) {
                     ZStack {
                         HStack {
@@ -87,6 +102,13 @@ struct SyncSettingsView: View {
                             }
                     }
 
+                    HStack {
+                        Label("Fallback to mdns services", systemImage: "antenna.radiowaves.left.and.right")
+                        Spacer()
+                        Toggle("", isOn: $appState.fallbackToMdns)
+                            .toggleStyle(.switch)
+                    }
+
                     if let result = appState.adbConnectionResult {
                         VStack(alignment: .leading, spacing: 6) {
                             ExpandableLicenseSection(title: "ADB Console", content: "[" + (UserDefaults.standard.lastADBCommand ?? "[]") + "] " + result, copyable: true)
@@ -126,8 +148,7 @@ struct SyncSettingsView: View {
                     }
                 }
                 .padding()
-                .background(.background.opacity(0.3))
-                .cornerRadius(12.0)
+                .glassBoxIfAvailable(radius: 18)
 
                 // 2. Clipboard Sync
                 headerSection(title: "Clipboard Sync", icon: "clipboard")
@@ -144,8 +165,7 @@ struct SyncSettingsView: View {
                     .opacity(appState.isClipboardSyncEnabled ? 1.0 : 0.5)
                 }
                 .padding()
-                .background(.background.opacity(0.3))
-                .cornerRadius(12.0)
+                .glassBoxIfAvailable(radius: 18)
 
                 // 3. Notifications
                 headerSection(title: "Notifications Sync", icon: "bell.badge")
@@ -186,10 +206,33 @@ struct SyncSettingsView: View {
                     }
 
                     SettingsToggleView(name: "Send now playing status", icon: "play.circle", isOn: $appState.sendNowPlayingStatus)
+
+                    HStack {
+                        Label("Show in Control Center", systemImage: "slider.horizontal.below.rectangle")
+                        Button(action: { showControlCenterInfo = true }) {
+                            Image(systemName: "info.circle")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .alert("Show in Control Center", isPresented: $showControlCenterInfo) {
+                            Button("OK", role: .cancel) {}
+                        } message: {
+                            Text("This feature plays a silent audio track in background in order to show up in macOS media. This may prevent your multi-device bluetooth audio devices to not switch correctly.")
+                        }
+                        Spacer()
+                        Toggle("", isOn: $showInControlCenter)
+                            .toggleStyle(.switch)
+                            .onChange(of: showInControlCenter) { _, enabled in
+                                if enabled {
+                                    NowPlayingPublisher.shared.enableSilentAudio()
+                                } else {
+                                    NowPlayingPublisher.shared.disableSilentAudio()
+                                }
+                            }
+                    }
                 }
                 .padding()
-                .background(.background.opacity(0.3))
-                .cornerRadius(12.0)
+                .glassBoxIfAvailable(radius: 18)
                 .onAppear {
                     checkNotificationPermissions()
                 }
@@ -216,8 +259,7 @@ struct SyncSettingsView: View {
                     SettingsToggleView(name: "Ring for calls", icon: "speaker.wave.3", isOn: $appState.ringForCalls)
                 }
                 .padding()
-                .background(.background.opacity(0.3))
-                .cornerRadius(12.0)
+                .glassBoxIfAvailable(radius: 18)
 
                 // 5. Remote Accessibility Control
                 headerSection(title: "Remote Accessibility", icon: "accessibility")
@@ -231,10 +273,11 @@ struct SyncSettingsView: View {
                     }
                 }
                 .padding()
-                .background(.background.opacity(0.3))
-                .cornerRadius(12.0)
                 .sheet(isPresented: $showRemoteSheet) {
                     RemotePermissionView()
+                }
+                .sheet(isPresented: $showPairingSheet) {
+                    ADBPairingSheetView()
                 }
             }
             .padding()

@@ -18,9 +18,11 @@ struct SettingsFeaturesView: View {
     @AppStorage("manualPosition") private var manualPosition = false
     @AppStorage("continueApp") private var continueApp = false
     @AppStorage("directKeyInput") private var directKeyInput = true
+    @AppStorage("showInControlCenter") private var showInControlCenter = false
     @AppStorage("scrcpyDesktopDpi") private var scrcpyDesktopDpi = ""
 
     @State private var showingPlusPopover = false
+    @State private var showControlCenterInfo = false
     @State private var tempBitrate: Double = 4.00
     @State private var tempResolution: Double = 1200.00
     @State private var isDragging = false
@@ -289,8 +291,7 @@ struct SettingsFeaturesView: View {
 
             }
             .padding()
-            .background(.background.opacity(0.3))
-            .cornerRadius(12.0)
+            .glassBoxIfAvailable(radius: 18)
             .onAppear{
                 xCoords = UserDefaults.standard.manualPositionCoords[0]
                 yCoords = UserDefaults.standard.manualPositionCoords[1]
@@ -310,8 +311,7 @@ struct SettingsFeaturesView: View {
                 .opacity(appState.isClipboardSyncEnabled ? 1.0 : 0.5)
             }
             .padding()
-            .background(.background.opacity(0.3))
-            .cornerRadius(12.0)
+            .glassBoxIfAvailable(radius: 18)
 
             // Notifications
             VStack{
@@ -354,10 +354,33 @@ struct SettingsFeaturesView: View {
                 }
 
                 SettingsToggleView(name: "Send now playing status", icon: "play.circle", isOn: $appState.sendNowPlayingStatus)
+
+                HStack {
+                    Label("Show in Control Center", systemImage: "slider.horizontal.below.rectangle")
+                    Button(action: { showControlCenterInfo = true }) {
+                        Image(systemName: "info.circle")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .alert("Show in Control Center", isPresented: $showControlCenterInfo) {
+                        Button("OK", role: .cancel) {}
+                    } message: {
+                        Text("This feature plays a silent audio track in background in order to show up in macOS media. This may prevent your multi-device bluetooth audio devices to not switch correctly.")
+                    }
+                    Spacer()
+                    Toggle("", isOn: $showInControlCenter)
+                        .toggleStyle(.switch)
+                        .onChange(of: showInControlCenter) { _, enabled in
+                            if enabled {
+                                NowPlayingPublisher.shared.enableSilentAudio()
+                            } else {
+                                NowPlayingPublisher.shared.disableSilentAudio()
+                            }
+                        }
+                }
             }
             .padding()
-            .background(.background.opacity(0.3))
-            .cornerRadius(12.0)
+            .glassBoxIfAvailable(radius: 18)
             .onAppear{
                 checkNotificationPermissions()
             }
@@ -383,8 +406,7 @@ struct SettingsFeaturesView: View {
                 SettingsToggleView(name: "Ring for calls", icon: "speaker.wave.3", isOn: $appState.ringForCalls)
             }
             .padding()
-            .background(.background.opacity(0.3))
-            .cornerRadius(12.0)
+            .glassBoxIfAvailable(radius: 18)
         }
     }
 

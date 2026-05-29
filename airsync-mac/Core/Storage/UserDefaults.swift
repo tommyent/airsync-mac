@@ -25,8 +25,13 @@ extension UserDefaults {
         static let continueApp = "continueApp"
         static let directKeyInput = "directKeyInput"
         static let sendNowPlayingStatus = "sendNowPlayingStatus"
+        static let syncAndroidPlaybackSeekbar = "syncAndroidPlaybackSeekbar"
+        static let showInControlCenter = "showInControlCenter"
         static let isMusicCardHidden = "isMusicCardHidden"
         static let lastOnboarding = "lastOnboarding"
+        static let popupSharedImages = "popupSharedImages"
+        static let sharedImagePopupsLimit = "sharedImagePopupsLimit"
+        static let popupSharedImagesOnLeft = "popupSharedImagesOnLeft"
 
         static let notificationStacks = "notificationStacks"
         static let trialToken = "trialToken"
@@ -124,9 +129,43 @@ extension UserDefaults {
         set { set(newValue, forKey: Keys.sendNowPlayingStatus)}
     }
 
+    /// When enabled, AirSync plays a silent audio loop to claim macOS Now Playing focus,
+    /// allowing the Android playback seekbar to be exposed in boringNotch / Control Center.
+    /// Disabled by default because it causes Bluetooth multipoint headphones to route
+    /// audio to the Mac, preventing Android media from playing through the headphones.
+    var syncAndroidPlaybackSeekbar: Bool {
+        get { bool(forKey: Keys.syncAndroidPlaybackSeekbar) }
+        set { set(newValue, forKey: Keys.syncAndroidPlaybackSeekbar) }
+    }
+
+    /// Controls whether Android media info is published to macOS Control Center / boringNotch
+    /// via a silent background audio track. Off by default due to Bluetooth multipoint side-effects.
+    var showInControlCenter: Bool {
+        get { bool(forKey: Keys.showInControlCenter) }
+        set { set(newValue, forKey: Keys.showInControlCenter) }
+    }
+
     var isMusicCardHidden: Bool {
         get { bool(forKey: Keys.isMusicCardHidden) }
         set { set(newValue, forKey: Keys.isMusicCardHidden) }
+    }
+
+    var popupSharedImages: Bool {
+        get { object(forKey: Keys.popupSharedImages) == nil ? true : bool(forKey: Keys.popupSharedImages) }
+        set { set(newValue, forKey: Keys.popupSharedImages) }
+    }
+
+    var sharedImagePopupsLimit: Int {
+        get {
+            let val = integer(forKey: Keys.sharedImagePopupsLimit)
+            return val == 0 ? 3 : val
+        }
+        set { set(newValue, forKey: Keys.sharedImagePopupsLimit) }
+    }
+
+    var popupSharedImagesOnLeft: Bool {
+        get { bool(forKey: Keys.popupSharedImagesOnLeft) }
+        set { set(newValue, forKey: Keys.popupSharedImagesOnLeft) }
     }
 
     var trialToken: String? {
