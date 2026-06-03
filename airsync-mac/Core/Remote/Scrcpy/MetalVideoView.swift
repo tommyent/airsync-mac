@@ -170,65 +170,30 @@ struct MetalVideoView: NSViewRepresentable {
         override func rightMouseDown(with event: NSEvent) { ScrcpyControlClient.shared.sendKeyEvent(action: 0, keycode: 4) }
         override func rightMouseUp(with event: NSEvent) { ScrcpyControlClient.shared.sendKeyEvent(action: 1, keycode: 4) }
         
-        private var scrollDragY: Double = 0
-        private var isVirtualScrolling: Bool = false
-        private var scrollTimer: Timer?
-        
         override func scrollWheel(with event: NSEvent) {
             guard let client = streamClient, client.videoWidth > 0, client.videoHeight > 0 else { return }
             
-            let centerX = UInt32(Double(client.videoWidth) / 2.0)
-            let centerY = UInt32(Double(client.videoHeight) / 2.0)
+            let point = convert(event.locationInWindow, from: nil)
             
-            // NSEvent phases provide much more accurate lifecycle for trackpad gestures
-            let phase = event.phase
-            let momentumPhase = event.momentumPhase
+            // Coordinate mapping: NSView (flipped Y) to Android (0,0 is top-left)
+            let x = Int32(max(0, min(1.0, point.x / frame.width)) * Double(client.videoWidth))
+            let y = Int32(max(0, min(1.0, 1.0 - (point.y / frame.height))) * Double(client.videoHeight))
             
-            if phase == .began {
-                isVirtualScrolling = true
-                scrollDragY = Double(centerY)
-                sendVirtualTouch(action: 0, x: centerX, y: UInt32(scrollDragY), client: client)
-            } else if phase == .changed || (phase == [] && momentumPhase == []) {
-                // Handle actual scrolling movement
-                if !isVirtualScrolling {
-                    isVirtualScrolling = true
-                    scrollDragY = Double(centerY)
-                    sendVirtualTouch(action: 0, x: centerX, y: UInt32(scrollDragY), client: client)
-                }
-                
-                // Increase sensitivity and invert for "Natural" feel
-                let sensitivity: Double = event.hasPreciseScrollingDeltas ? 1.5 : 10.0
-                scrollDragY += Double(event.scrollingDeltaY) * sensitivity
-                scrollDragY = max(0, min(Double(client.videoHeight), scrollDragY))
-                
-                sendVirtualTouch(action: 2, x: centerX, y: UInt32(scrollDragY), client: client)
-            }
+            // For scrcpy scroll events, positive scrolls left/up, negative scrolls right/down.
+            // On macOS:
+            // - scrollingDeltaY is positive when scrolling up (moving page down)
+            // - scrollingDeltaX is positive when scrolling left (moving page right)
+            // We pass the delta values directly so Android handles continuous/precise scrolling smoothly.
+            let scrollX = Float(event.scrollingDeltaX)
+            let scrollY = Float(event.scrollingDeltaY)
             
-            // End virtual touch session
-            if phase == .ended || phase == .cancelled || momentumPhase == .ended || momentumPhase == .cancelled {
-                if isVirtualScrolling {
-                    sendVirtualTouch(action: 1, x: centerX, y: UInt32(scrollDragY), client: client)
-                    isVirtualScrolling = false
-                }
-                scrollTimer?.invalidate()
-                scrollTimer = nil
-            } else if phase == [] && momentumPhase == [] {
-                // Fallback for traditional mice wheel (timer based)
-                scrollTimer?.invalidate()
-                scrollTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: false) { [weak self] _ in
-                    guard let self = self, let client = self.streamClient, self.isVirtualScrolling else { return }
-                    self.sendVirtualTouch(action: 1, x: centerX, y: UInt32(self.scrollDragY), client: client)
-                    self.isVirtualScrolling = false
-                }
-            }
-        }
-        
-        private func sendVirtualTouch(action: UInt8, x: UInt32, y: UInt32, client: ScrcpyStreamClient) {
-            ScrcpyControlClient.shared.sendTouchEvent(
-                action: action,
-                x: x, y: y,
+            ScrcpyControlClient.shared.sendScrollEvent(
+                x: x,
+                y: y,
                 width: UInt16(client.videoWidth),
-                height: UInt16(client.videoHeight)
+                height: UInt16(client.videoHeight),
+                scrollX: scrollX,
+                scrollY: scrollY
             )
         }
         
