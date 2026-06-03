@@ -425,7 +425,15 @@ struct ADBConnector {
             let mappedSerial = AppState.shared.selectedWiredSerial ?? (AppState.shared.device?.deviceId).flatMap { AppState.shared.deviceAdbSerials[$0] }
             
             getWiredDevices { devices in
-                let serialToUse = mappedSerial ?? devices.first?.serial
+                let serialToUse: String?
+                if let mapped = mappedSerial, devices.contains(where: { $0.serial == mapped }) {
+                    serialToUse = mapped
+                } else if mappedSerial == nil {
+                    serialToUse = devices.first?.serial
+                } else {
+                    serialToUse = nil
+                }
+                
                 DispatchQueue.global(qos: .userInitiated).async {
                     if wiredAdbEnabled, let serial = serialToUse {
                         args.append("--serial=\(serial)")
@@ -519,7 +527,15 @@ struct ADBConnector {
                     let mappedSerial = AppState.shared.selectedWiredSerial ?? (AppState.shared.device?.deviceId).flatMap { AppState.shared.deviceAdbSerials[$0] }
                     
                     getWiredDevices { devices in
-                        let serialToUse = mappedSerial ?? devices.first?.serial
+                        let serialToUse: String?
+                        if let mapped = mappedSerial, devices.contains(where: { $0.serial == mapped }) {
+                            serialToUse = mapped
+                        } else if mappedSerial == nil {
+                            serialToUse = devices.first?.serial
+                        } else {
+                            serialToUse = nil
+                        }
+                        
                         DispatchQueue.global(qos: .userInitiated).async {
                             guard let adbPath = findExecutable(named: "adb", fallbackPaths: possibleADBPaths) else {
                                 DispatchQueue.main.async { AppState.shared.isADBTransferring = false }
@@ -562,7 +578,15 @@ struct ADBConnector {
             let mappedSerial = AppState.shared.selectedWiredSerial ?? (AppState.shared.device?.deviceId).flatMap { AppState.shared.deviceAdbSerials[$0] }
             
             getWiredDevices { devices in
-                let serialToUse = mappedSerial ?? devices.first?.serial
+                let serialToUse: String?
+                if let mapped = mappedSerial, devices.contains(where: { $0.serial == mapped }) {
+                    serialToUse = mapped
+                } else if mappedSerial == nil {
+                    serialToUse = devices.first?.serial
+                } else {
+                    serialToUse = nil
+                }
+                
                 DispatchQueue.global(qos: .userInitiated).async {
                     guard let adbPath = findExecutable(named: "adb", fallbackPaths: possibleADBPaths) else {
                         DispatchQueue.main.async { AppState.shared.isADBTransferring = false }
