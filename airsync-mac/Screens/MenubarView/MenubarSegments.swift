@@ -74,15 +74,17 @@ struct TopSegmentView: View {
                         }
                     )
 
-                    GlassButtonView(
-                        label: L("menu.browseFiles"),
-                        systemImage: "folder",
-                        iconOnly: true,
-                        circleSize: toolButtonSize,
-                        action: {
-                            WebDAVManager.shared.openInFinder()
-                        }
-                    )
+                    if appState.isFileAccessEnabled && WebDAVManager.shared.isMounted {
+                        GlassButtonView(
+                            label: L("menu.browseFiles"),
+                            systemImage: "folder",
+                            iconOnly: true,
+                            circleSize: toolButtonSize,
+                            action: {
+                                WebDAVManager.shared.openInFinder()
+                            }
+                        )
+                    }
                     
                     if appState.adbConnected && (appState.isPlus || !appState.licenseCheck) {
                         GlassButtonView(

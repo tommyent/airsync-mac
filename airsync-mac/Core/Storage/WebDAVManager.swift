@@ -7,6 +7,7 @@
 
 import Foundation
 import Cocoa
+import Combine
 
 class WebDAVManager {
     static let shared = WebDAVManager()
@@ -14,7 +15,7 @@ class WebDAVManager {
     private let mountPoint = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Library/Caches/com.airsync.mac/AndroidVolume")
     
-    private var isMounted = false
+    private(set) var isMounted = false
     
     private init() {}
     
@@ -51,6 +52,9 @@ class WebDAVManager {
                 if process.terminationStatus == 0 {
                     self.isMounted = true
                     print("[webdav] Successfully mounted Android volume")
+                    DispatchQueue.main.async {
+                        AppState.shared.objectWillChange.send()
+                    }
                 } else {
                     print("[webdav] Failed to mount WebDAV volume. Status: \(process.terminationStatus)")
                 }
@@ -64,6 +68,9 @@ class WebDAVManager {
         DispatchQueue.global(qos: .userInitiated).async {
             self.unmountSilently()
             self.isMounted = false
+            DispatchQueue.main.async {
+                AppState.shared.objectWillChange.send()
+            }
         }
     }
     
