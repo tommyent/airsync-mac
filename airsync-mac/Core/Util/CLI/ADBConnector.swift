@@ -8,6 +8,12 @@
 import Foundation
 import AppKit
 
+struct WiredADBDevice: Hashable, Identifiable {
+    var id: String { serial }
+    let serial: String
+    let model: String
+}
+
 struct ADBConnector {
 
     // Potential fallback paths
@@ -78,10 +84,10 @@ struct ADBConnector {
         print("[adb-connector] (Binary Detection) \(message)")
     }
     
-    static func getWiredDeviceSerial(completion: @escaping (String?) -> Void) {
+    static func getWiredDevices(completion: @escaping ([WiredADBDevice]) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async {
             guard let adbPath = findExecutable(named: "adb", fallbackPaths: possibleADBPaths) else {
-                completion(nil)
+                completion([])
                 return
             }
             
@@ -100,21 +106,39 @@ struct ADBConnector {
                 let output = String(data: data, encoding: .utf8) ?? ""
                 let lines = output.components(separatedBy: .newlines)
                 
+                var devices: [WiredADBDevice] = []
                 for line in lines {
                     if line.contains("device") && line.contains("usb:") {
                         let parts = line.split(separator: " ").filter { !$0.isEmpty }
                         if !parts.isEmpty {
                             let serial = String(parts[0])
-                            logBinaryDetection("Detected wired ADB device: \(serial)")
-                            completion(serial)
-                            return
+                            var model = "Unknown Device"
+                            for part in parts {
+                                if part.hasPrefix("model:") {
+                                    model = part.replacingOccurrences(of: "model:", with: "").replacingOccurrences(of: "_", with: " ")
+                                    break
+                                }
+                            }
+                            devices.append(WiredADBDevice(serial: serial, model: model))
                         }
                     }
                 }
+                completion(devices)
             } catch {
                 print("[adb-connector] Error getting wired devices: \(error)")
+                completion([])
             }
-            completion(nil)
+        }
+    }
+    
+    static func getWiredDeviceSerial(completion: @escaping (String?) -> Void) {
+        getWiredDevices { devices in
+            if let first = devices.first {
+                logBinaryDetection("Detected wired ADB device: \(first.serial)")
+                completion(first.serial)
+            } else {
+                completion(nil)
+            }
         }
     }
 
@@ -398,9 +422,12 @@ struct ADBConnector {
                 "--no-power-on"
             ]
 
-            getWiredDeviceSerial { serial in
+            let mappedSerial = AppState.shared.selectedWiredSerial ?? (AppState.shared.device?.deviceId).flatMap { AppState.shared.deviceAdbSerials[$0] }
+            
+            getWiredDevices { devices in
+                let serialToUse = mappedSerial ?? devices.first?.serial
                 DispatchQueue.global(qos: .userInitiated).async {
-                    if wiredAdbEnabled, let serial = serial {
+                    if wiredAdbEnabled, let serial = serialToUse {
                         args.append("--serial=\(serial)")
                         DispatchQueue.main.async { AppState.shared.adbConnectionMode = .wired }
                         logBinaryDetection("Wired ADB prioritized: using serial \(serial)")
@@ -489,7 +516,10 @@ struct ADBConnector {
                     AppState.shared.isADBTransferring = true
                     AppState.shared.adbTransferringFilePath = remotePath
 
-                    getWiredDeviceSerial { serial in
+                    let mappedSerial = AppState.shared.selectedWiredSerial ?? (AppState.shared.device?.deviceId).flatMap { AppState.shared.deviceAdbSerials[$0] }
+                    
+                    getWiredDevices { devices in
+                        let serialToUse = mappedSerial ?? devices.first?.serial
                         DispatchQueue.global(qos: .userInitiated).async {
                             guard let adbPath = findExecutable(named: "adb", fallbackPaths: possibleADBPaths) else {
                                 DispatchQueue.main.async { AppState.shared.isADBTransferring = false }
@@ -498,7 +528,7 @@ struct ADBConnector {
                             }
                             
                             var args = ["pull", remotePath, destiny]
-                            if wiredAdbEnabled, let serial = serial {
+                            if wiredAdbEnabled, let serial = serialToUse {
                                 args.insert(contentsOf: ["-s", serial], at: 0)
                             } else {
                                 args.insert(contentsOf: ["-s", fullAddress], at: 0)
@@ -529,7 +559,10 @@ struct ADBConnector {
             AppState.shared.isADBTransferring = true
             AppState.shared.adbTransferringFilePath = remotePath
 
-            getWiredDeviceSerial { serial in
+            let mappedSerial = AppState.shared.selectedWiredSerial ?? (AppState.shared.device?.deviceId).flatMap { AppState.shared.deviceAdbSerials[$0] }
+            
+            getWiredDevices { devices in
+                let serialToUse = mappedSerial ?? devices.first?.serial
                 DispatchQueue.global(qos: .userInitiated).async {
                     guard let adbPath = findExecutable(named: "adb", fallbackPaths: possibleADBPaths) else {
                         DispatchQueue.main.async { AppState.shared.isADBTransferring = false }
@@ -538,7 +571,7 @@ struct ADBConnector {
                     }
 
                     var args = ["push", localPath, remotePath]
-                    if wiredAdbEnabled, let serial = serial {
+                    if wiredAdbEnabled, let serial = serialToUse {
                         args.insert(contentsOf: ["-s", serial], at: 0)
                     } else {
                         args.insert(contentsOf: ["-s", fullAddress], at: 0)

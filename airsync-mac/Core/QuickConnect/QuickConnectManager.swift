@@ -73,7 +73,8 @@ class QuickConnectManager: ObservableObject {
             ipAddress: bestIP,
             port: discoveredDevice.port,
             version: "Unknown",
-            adbPorts: []
+            adbPorts: [],
+            deviceId: discoveredDevice.deviceId
         )
         
         saveLastConnectedDevice(device)

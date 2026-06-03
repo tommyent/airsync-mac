@@ -117,6 +117,8 @@ struct ConnectionPillPopover: View {
     @ObservedObject var bleManager = BLECentralManager.shared
     @State private var currentIPAddress: String = "N/A"
     
+    @State private var availableWiredDevices: [WiredADBDevice] = []
+    
     var bleStatusText: String {
         switch bleManager.connectionStatus {
         case .scanning: return "Scanning..."
@@ -147,11 +149,35 @@ struct ConnectionPillPopover: View {
                     )
                     
                     if appState.isPlus && appState.adbConnected {
-                        ConnectionInfoText(
-                            label: "ADB Connection",
-                            icon: appState.adbConnectionMode == .wired ? "cable.connector" : "airplay.audio",
-                            text: appState.adbConnectionMode == .wired ? "Wired (USB)" : "Wireless"
-                        )
+                        if appState.adbConnectionMode == .wired {
+                            HStack {
+                                Label(L("connection.wiredAdb"), systemImage: "cable.connector")
+                                Spacer()
+                                Picker("", selection: Binding(
+                                    get: { appState.selectedWiredSerial ?? "" },
+                                    set: { newSerial in
+                                        appState.selectedWiredSerial = newSerial
+                                        if let deviceId = appState.device?.deviceId {
+                                            appState.deviceAdbSerials[deviceId] = newSerial
+                                        }
+                                        appState.adbConnectionResult = "Switched to Wired ADB Serial: \(newSerial)"
+                                    }
+                                )) {
+                                    Text(loc: "connection.selectDevice").tag("")
+                                    ForEach(availableWiredDevices, id: \.serial) { dev in
+                                        Text("\(dev.model) (\(dev.serial))").tag(dev.serial)
+                                    }
+                                }
+                                .pickerStyle(MenuPickerStyle())
+                                .frame(width: 140)
+                            }
+                        } else {
+                            ConnectionInfoText(
+                                label: "ADB Connection",
+                                icon: "airplay.audio",
+                                text: L("connection.wireless")
+                            )
+                        }
                     }
 
                     HStack {
@@ -253,6 +279,11 @@ struct ConnectionPillPopover: View {
         .padding()
         .onAppear {
             currentIPAddress = WebSocketServer.shared.getLocalIPAddress(adapterName: appState.selectedNetworkAdapterName) ?? "N/A"
+            ADBConnector.getWiredDevices { devices in
+                DispatchQueue.main.async {
+                    self.availableWiredDevices = devices
+                }
+            }
         }
     }
 }

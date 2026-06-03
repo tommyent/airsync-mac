@@ -161,4 +161,7 @@
   "whatsnew.scan.message": "Everything is encrypted with the secure key which is shared during authentication by scanning this QR code",
   "whatsnew.nearby.title": "Nearby devices show up here",
   "whatsnew.nearby.message": "Click to connect",
+  "connection.wiredAdb": "Wired ADB",
+  "connection.selectDevice": "Select Device",
+  "connection.wireless": "Wireless"
 }

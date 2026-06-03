@@ -107,13 +107,15 @@ extension WebSocketServer {
 
             let version = dict["version"] as? String ?? "2.0.0"
             let adbPorts = dict["adbPorts"] as? [String] ?? []
+            let deviceId = dict["id"] as? String ?? ""
 
             AppState.shared.device = Device(
                 name: name,
                 ipAddress: ip,
                 port: port,
                 version: version,
-                adbPorts: adbPorts
+                adbPorts: adbPorts,
+                deviceId: deviceId
             )
 
             if let base64 = dict["wallpaper"] as? String {
@@ -143,22 +145,55 @@ extension WebSocketServer {
 
             if (!AppState.shared.adbConnected && (AppState.shared.adbEnabled || AppState.shared.manualAdbConnectionPending || AppState.shared.wiredAdbEnabled) && AppState.shared.isPlus) {
                 if AppState.shared.wiredAdbEnabled {
-                    ADBConnector.getWiredDeviceSerial(completion: { serial in
-                        if let serial = serial {
-                            DispatchQueue.main.async {
-                                AppState.shared.adbConnected = true
-                                AppState.shared.adbConnectionMode = .wired
-                                AppState.shared.adbConnectionResult = "Connected via Wired ADB (Serial: \(serial))"
-                                AppState.shared.manualAdbConnectionPending = false
+                    ADBConnector.getWiredDevices { wiredDevices in
+                        let mappedSerial = AppState.shared.selectedWiredSerial ?? AppState.shared.deviceAdbSerials[deviceId]
+                        
+                        if !wiredDevices.isEmpty {
+                            if let mappedSerial = mappedSerial {
+                                if let matchedDevice = wiredDevices.first(where: { $0.serial == mappedSerial }) {
+                                    DispatchQueue.main.async {
+                                        AppState.shared.selectedWiredSerial = matchedDevice.serial
+                                        AppState.shared.adbConnected = true
+                                        AppState.shared.adbConnectionMode = .wired
+                                        AppState.shared.adbConnectionResult = "Connected via Wired ADB (Serial: \(matchedDevice.serial))"
+                                        AppState.shared.manualAdbConnectionPending = false
+                                    }
+                                } else {
+                                    if AppState.shared.adbEnabled || AppState.shared.manualAdbConnectionPending {
+                                        ADBConnector.connectToADB(ip: ip)
+                                    }
+                                    DispatchQueue.main.async {
+                                        AppState.shared.manualAdbConnectionPending = false
+                                    }
+                                }
+                            } else {
+                                if wiredDevices.count == 1, let singleDevice = wiredDevices.first {
+                                    DispatchQueue.main.async {
+                                        AppState.shared.deviceAdbSerials[deviceId] = singleDevice.serial
+                                        AppState.shared.selectedWiredSerial = singleDevice.serial
+                                        AppState.shared.adbConnected = true
+                                        AppState.shared.adbConnectionMode = .wired
+                                        AppState.shared.adbConnectionResult = "Connected via Wired ADB (Serial: \(singleDevice.serial))"
+                                        AppState.shared.manualAdbConnectionPending = false
+                                    }
+                                } else {
+                                    if AppState.shared.adbEnabled || AppState.shared.manualAdbConnectionPending {
+                                        ADBConnector.connectToADB(ip: ip)
+                                    }
+                                    DispatchQueue.main.async {
+                                        AppState.shared.manualAdbConnectionPending = false
+                                    }
+                                }
                             }
-                        } else if AppState.shared.adbEnabled || AppState.shared.manualAdbConnectionPending {
-                            // Try wireless connection if wired failed or no device found
-                            ADBConnector.connectToADB(ip: ip)
+                        } else {
+                            if AppState.shared.adbEnabled || AppState.shared.manualAdbConnectionPending {
+                                ADBConnector.connectToADB(ip: ip)
+                            }
                             DispatchQueue.main.async {
                                 AppState.shared.manualAdbConnectionPending = false
                             }
                         }
-                    })
+                    }
                 } else if AppState.shared.adbEnabled || AppState.shared.manualAdbConnectionPending {
                     // Try wireless connection directly
                     ADBConnector.connectToADB(ip: ip)
