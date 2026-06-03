@@ -29,9 +29,115 @@ struct MetalVideoView: NSViewRepresentable {
     class ScrcpyMTKView: MTKView {
         var streamClient: ScrcpyStreamClient?
         
-        override func mouseDown(with event: NSEvent) { sendTouchEvent(action: 0, event: event) }
+        override func mouseDown(with event: NSEvent) {
+            window?.makeFirstResponder(self)
+            sendTouchEvent(action: 0, event: event)
+        }
         override func mouseUp(with event: NSEvent) { sendTouchEvent(action: 1, event: event) }
         override func mouseDragged(with event: NSEvent) { sendTouchEvent(action: 2, event: event) }
+        
+        // Keyboard event handling
+        override func keyDown(with event: NSEvent) {
+            if let keycode = androidKeycode(for: event.keyCode) {
+                var metaState: UInt32 = 0
+                let flags = event.modifierFlags
+                if flags.contains(.shift) { metaState |= 0x01 }
+                if flags.contains(.option) { metaState |= 0x02 }
+                if flags.contains(.control) { metaState |= 0x1000 }
+                if flags.contains(.command) { metaState |= 0x10000 }
+                if flags.contains(.capsLock) { metaState |= 0x100000 }
+                
+                ScrcpyControlClient.shared.sendKeyEvent(action: 0, keycode: keycode, metaState: metaState)
+            } else {
+                super.keyDown(with: event)
+            }
+        }
+        
+        override func keyUp(with event: NSEvent) {
+            if let keycode = androidKeycode(for: event.keyCode) {
+                var metaState: UInt32 = 0
+                let flags = event.modifierFlags
+                if flags.contains(.shift) { metaState |= 0x01 }
+                if flags.contains(.option) { metaState |= 0x02 }
+                if flags.contains(.control) { metaState |= 0x1000 }
+                if flags.contains(.command) { metaState |= 0x10000 }
+                if flags.contains(.capsLock) { metaState |= 0x100000 }
+                
+                ScrcpyControlClient.shared.sendKeyEvent(action: 1, keycode: keycode, metaState: metaState)
+            } else {
+                super.keyUp(with: event)
+            }
+        }
+        
+        private func androidKeycode(for macKeycode: UInt16) -> UInt32? {
+            switch macKeycode {
+            // Letters
+            case 0: return 29  // A
+            case 11: return 30 // B
+            case 8: return 31  // C
+            case 2: return 32  // D
+            case 14: return 33 // E
+            case 3: return 34  // F
+            case 5: return 35  // G
+            case 4: return 36  // H
+            case 34: return 37 // I
+            case 38: return 38 // J
+            case 40: return 39 // K
+            case 37: return 40 // L
+            case 46: return 41 // M
+            case 45: return 42 // N
+            case 31: return 43 // O
+            case 35: return 44 // P
+            case 12: return 45 // Q
+            case 15: return 46 // R
+            case 1: return 47  // S
+            case 17: return 48 // T
+            case 32: return 49 // U
+            case 9: return 50  // V
+            case 13: return 51 // W
+            case 7: return 52  // X
+            case 16: return 53 // Y
+            case 6: return 54  // Z
+            
+            // Numbers
+            case 29: return 7  // 0
+            case 18: return 8  // 1
+            case 19: return 9  // 2
+            case 20: return 10 // 3
+            case 21: return 11 // 4
+            case 23: return 12 // 5
+            case 22: return 13 // 6
+            case 26: return 14 // 7
+            case 28: return 15 // 8
+            case 25: return 16 // 9
+            
+            // Special / Navigation
+            case 36: return 66  // Enter
+            case 51: return 67  // Delete (Backspace)
+            case 53: return 111 // Escape
+            case 48: return 61  // Tab
+            case 49: return 62  // Space
+            case 123: return 21 // Left
+            case 124: return 22 // Right
+            case 126: return 19 // Up
+            case 125: return 20 // Down
+            
+            // Additional symbols
+            case 24: return 81  // Plus/Equal
+            case 27: return 69  // Minus
+            case 33: return 71  // Left Bracket
+            case 30: return 72  // Right Bracket
+            case 42: return 73  // Backslash
+            case 41: return 74  // Semicolon
+            case 39: return 75  // Apostrophe
+            case 43: return 55  // Comma
+            case 47: return 56  // Period
+            case 44: return 76  // Slash
+            case 50: return 68  // Grave (Backtick)
+            
+            default: return nil
+            }
+        }
         
         // Secondary click as "Back" button (AKEYCODE_BACK = 4)
         override func rightMouseDown(with event: NSEvent) { ScrcpyControlClient.shared.sendKeyEvent(action: 0, keycode: 4) }
