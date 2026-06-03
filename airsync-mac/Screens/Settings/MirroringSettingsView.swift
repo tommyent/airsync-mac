@@ -28,6 +28,7 @@ struct MirroringSettingsView: View {
     @State private var yCoords: String = "0"
 
     @AppStorage("swapCmdAndCtrl") private var swapCmdAndCtrl = true
+    @AppStorage("showMirrorControls") private var showMirrorControls = true
 
     var body: some View {
         ScrollView {
@@ -53,11 +54,17 @@ struct MirroringSettingsView: View {
         VStack(alignment: .leading, spacing: 12) {
             headerSection(title: L("settings.mirroring.androidMirroring"), icon: "keyboard")
             
-            VStack(spacing: 16) {
+            VStack(spacing: 12) {
                 SettingsToggleView(
                     name: L("settings.mirroring.swapCmdCtrl"),
                     icon: "arrow.triangle.2.circlepath",
                     isOn: $swapCmdAndCtrl
+                )
+                
+                SettingsToggleView(
+                    name: L("settings.mirroring.showMirrorControls"),
+                    icon: "sidebar.left",
+                    isOn: $showMirrorControls
                 )
             }
             .padding()

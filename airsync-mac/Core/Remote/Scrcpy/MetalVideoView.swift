@@ -41,7 +41,7 @@ struct MetalVideoView: NSViewRepresentable {
             if let keycode = androidKeycode(for: event.keyCode) {
                 var metaState: UInt32 = 0
                 let flags = event.modifierFlags
-                let swap = UserDefaults.standard.object(forKey: "swapCmdAndCtrl") as? Bool ?? true
+                let swap = UserDefaults.standard.swapCmdAndCtrl
                 
                 if flags.contains(.shift) { metaState |= 0x01 }
                 if flags.contains(.option) { metaState |= 0x02 }
@@ -65,7 +65,7 @@ struct MetalVideoView: NSViewRepresentable {
             if let keycode = androidKeycode(for: event.keyCode) {
                 var metaState: UInt32 = 0
                 let flags = event.modifierFlags
-                let swap = UserDefaults.standard.object(forKey: "swapCmdAndCtrl") as? Bool ?? true
+                let swap = UserDefaults.standard.swapCmdAndCtrl
                 
                 if flags.contains(.shift) { metaState |= 0x01 }
                 if flags.contains(.option) { metaState |= 0x02 }
@@ -86,7 +86,7 @@ struct MetalVideoView: NSViewRepresentable {
         }
         
         private func androidKeycode(for macKeycode: UInt16) -> UInt32? {
-            let swap = UserDefaults.standard.object(forKey: "swapCmdAndCtrl") as? Bool ?? true
+            let swap = UserDefaults.standard.swapCmdAndCtrl
             switch macKeycode {
             // Modifiers
             case 59: return swap ? 117 : 113 // Left Control

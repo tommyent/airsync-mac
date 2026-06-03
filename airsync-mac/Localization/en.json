@@ -98,6 +98,7 @@
   "settings.mirroring.plusFeatureMessage": "App Mirroring is an AirSync+ feature",
   "settings.mirroring.androidMirroring": "Android mirroring settings",
   "settings.mirroring.swapCmdCtrl": "Swap ⌘ and ⌃ (macOS familiar)",
+  "settings.mirroring.showMirrorControls": "Show navigation buttons (⌘B)",
   "quickshare.copy": "Copy to clipboard",
   "settings.menubar.showIcon": "Show Menu Bar Icon",
   "settings.menubar.showText": "Show Menu Bar Text",

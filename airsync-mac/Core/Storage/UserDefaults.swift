@@ -188,6 +188,16 @@ extension UserDefaults {
         set { set(newValue, forKey: Keys.trialLastSync) }
     }
     
+    var swapCmdAndCtrl: Bool {
+        get { object(forKey: "swapCmdAndCtrl") == nil ? true : bool(forKey: "swapCmdAndCtrl") }
+        set { set(newValue, forKey: "swapCmdAndCtrl") }
+    }
+
+    var showMirrorControls: Bool {
+        get { object(forKey: "showMirrorControls") == nil ? true : bool(forKey: "showMirrorControls") }
+        set { set(newValue, forKey: "showMirrorControls") }
+    }
+    
     // MARK: - String-based Onboarding Tracking
     
     var lastOnboarding: String? {
