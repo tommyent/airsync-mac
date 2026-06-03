@@ -19,6 +19,7 @@ struct SettingsSidebarView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 12)
+                .whatsNewPopover(item: .settings, arrowEdge: .trailing)
 
             ScrollView {
                 VStack(spacing: 4) {
@@ -44,6 +45,9 @@ struct SettingsSidebarView: View {
             .padding(.bottom, 12)
         }
         .frame(minWidth: 260)
+        .onAppear {
+            WhatsNewTourManager.shared.evaluateActiveItem()
+        }
     }
 
     @ViewBuilder

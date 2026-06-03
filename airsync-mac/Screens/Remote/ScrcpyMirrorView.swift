@@ -17,6 +17,10 @@ struct ScrcpyMirrorView: View {
     @State private var errorMessage: String?
     @State private var isHovering = false
     @State private var currentWindow: NSWindow?
+    @State private var isWindowActive = false
+    @State private var navbarController = NavbarWindowController()
+    @State private var sideController = SideControlWindowController()
+    @AppStorage("showMirrorControls") private var showMirrorControls = true
     
     private var safeRatio: CGFloat {
         if streamClient.videoWidth > 0 && streamClient.videoHeight > 0 {
@@ -41,6 +45,17 @@ struct ScrcpyMirrorView: View {
                 .animation(.easeInOut(duration: 0.8), value: isStreaming)
                 .ignoresSafeArea()
             
+            // Invisible button for Command+B shortcut
+            Button(action: {
+                showMirrorControls.toggle()
+            }) {
+                Text("")
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut("b", modifiers: [.command])
+            .frame(width: 0, height: 0)
+            .opacity(0)
+            
             VStack(spacing: 0) {
                 // Expanding Header
                 headerView
@@ -53,7 +68,9 @@ struct ScrcpyMirrorView: View {
                         MetalVideoView(streamClient: streamClient)
                             .aspectRatio(safeRatio, contentMode: .fit)
                             .cornerRadius(contentCornerRadius)
-                            .padding(isHovering ? 8 : 0)
+                            .padding(.top, isHovering ? 8 : 0)
+                            .padding(.horizontal, isHovering ? 8 : 0)
+                            .padding(.bottom, isHovering ? 20 : 0)
                             .opacity(isStreaming ? 1 : 0)
                             .blur(radius: isStreaming ? 0 : 20)
                             .animation(.spring(response: 0.6, dampingFraction: 0.8), value: isStreaming)
@@ -72,6 +89,14 @@ struct ScrcpyMirrorView: View {
                 }
                 .animation(.easeInOut(duration: 1.25), value: isMirroring)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                
+                if isHovering {
+                    Text("⌘B to toggle controls")
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .foregroundColor(.primary.opacity(0.4))
+                        .padding(.bottom, 8)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
             }
             .background(WindowAccessor(callback: { window in
                 self.currentWindow = window
@@ -98,6 +123,25 @@ struct ScrcpyMirrorView: View {
                 NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { _ in
                     AppState.shared.isNativeMirroring = false
                     self.stopMirroring()
+                }
+
+                // Track parent movement/resize to reposition child floating window
+                NotificationCenter.default.addObserver(forName: NSWindow.didMoveNotification, object: window, queue: .main) { _ in
+                    navbarController.updatePosition(parent: window)
+                    sideController.updatePosition(parent: window)
+                }
+                NotificationCenter.default.addObserver(forName: NSWindow.didResizeNotification, object: window, queue: .main) { _ in
+                    navbarController.updatePosition(parent: window)
+                    sideController.updatePosition(parent: window)
+                }
+
+                // Track focus/active state
+                self.isWindowActive = window.isKeyWindow
+                NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window, queue: .main) { _ in
+                    self.isWindowActive = true
+                }
+                NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: window, queue: .main) { _ in
+                    self.isWindowActive = false
                 }
             }))
             .ignoresSafeArea()
@@ -127,6 +171,13 @@ struct ScrcpyMirrorView: View {
         }
         .onChange(of: isMirroring) { _, newValue in
             if !newValue { isHovering = false }
+            updateNavbarVisibility()
+        }
+        .onChange(of: isWindowActive) { _, _ in
+            updateNavbarVisibility()
+        }
+        .onChange(of: showMirrorControls) { _, _ in
+            updateNavbarVisibility()
         }
         .onChange(of: streamClient.videoWidth) { _, newValue in
             updateWindowConstraints(width: newValue, height: streamClient.videoHeight)
@@ -139,6 +190,8 @@ struct ScrcpyMirrorView: View {
         }
         .frame(minWidth: 200, minHeight: 300)
         .onDisappear {
+            navbarController.hide()
+            sideController.hide()
             stopMirroring()
         }
     }
@@ -262,4 +315,17 @@ struct ScrcpyMirrorView: View {
         ScrcpyServerManager.shared.stopServer()
         isMirroring = false
     }
+
+    private func updateNavbarVisibility() {
+        guard let window = currentWindow else { return }
+        if isWindowActive && isMirroring && showMirrorControls {
+            navbarController.show(parent: window, isMirroring: isMirroring)
+            sideController.show(parent: window, isMirroring: isMirroring)
+        } else {
+            navbarController.hide()
+            sideController.hide()
+        }
+    }
 }
+
+

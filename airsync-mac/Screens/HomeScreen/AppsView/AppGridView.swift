@@ -38,6 +38,7 @@ struct AppGridView: View {
                 }
                 .padding(12)
             }
+            .whatsNewPopover(item: .appsGrid, arrowEdge: .top)
         }
         .searchable(
             text: $searchText,
@@ -45,6 +46,12 @@ struct AppGridView: View {
             prompt: "Search Apps"
         )
         .padding(0)
+        .onAppear {
+            WhatsNewTourManager.shared.evaluateActiveItem()
+        }
+        .onChange(of: appState.selectedTab) { _, _ in
+            WhatsNewTourManager.shared.evaluateActiveItem()
+        }
     }
 }
 

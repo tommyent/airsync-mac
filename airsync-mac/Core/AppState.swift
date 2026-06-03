@@ -29,6 +29,9 @@ class AppState: ObservableObject {
     @Published var isOS26: Bool = true
 
     init() {
+        self.deviceAdbSerials = UserDefaults.standard.dictionary(forKey: "deviceAdbSerials") as? [String: String] ?? [:]
+        self.selectedWiredSerial = UserDefaults.standard.string(forKey: "selectedWiredSerial")
+
         let isPlusLoaded = UserDefaults.standard.bool(forKey: "isPlus")
         self.isPlus = isPlusLoaded
 
@@ -119,7 +122,8 @@ class AppState: ObservableObject {
             ipAddress: adapterIP,
             port: portNum,
             version: appVersion,
-            adbPorts: []
+            adbPorts: [],
+            deviceId: UserDefaults.standard.string(forKey: "trialDeviceIdentifier") ?? "mac_device"
         )
         
         self.licenseDetails = AppState.loadLicenseDetailsFromUserDefaults()
@@ -327,6 +331,18 @@ class AppState: ObservableObject {
             UserDefaults.standard.set(selectedNetworkAdapterName, forKey: "selectedNetworkAdapterName")
         }
     }
+    @Published var deviceAdbSerials: [String: String] {
+        didSet {
+            UserDefaults.standard.set(deviceAdbSerials, forKey: "deviceAdbSerials")
+        }
+    }
+
+    @Published var selectedWiredSerial: String? {
+        didSet {
+            UserDefaults.standard.set(selectedWiredSerial, forKey: "selectedWiredSerial")
+        }
+    }
+
     @Published var showMenubarText: Bool {
         didSet {
             UserDefaults.standard.set(showMenubarText, forKey: "showMenubarText")
@@ -1546,7 +1562,8 @@ class AppState: ObservableObject {
             ipAddress: "BLE",
             port: 0,
             version: "2.0.0",
-            adbPorts: []
+            adbPorts: [],
+            deviceId: BLECentralManager.shared.connectingDeviceUUID ?? "ble_device"
         )
         print("[state] (BLE) Created virtual device: \(name)")
     }

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import AppKit
 
 // MARK: - Seekbar sub-view
 
@@ -22,13 +23,25 @@ private struct MediaSeekbarView: View {
                 in: 0...max(music.duration, 1),
                 onEditingChanged: { editing in
                     appState.isDraggingMedia = editing
-                    if !editing {
+                    if editing {
+                        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
+                    } else {
+                        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
                         appState.handleMediaSeek(to: appState.mediaPosition)
                     }
                 }
             )
             .accentColor(.primary)
             .padding(.horizontal, 2)
+            .onChange(of: appState.mediaPosition) { oldValue, newValue in
+                guard appState.isDraggingMedia else { return }
+                let tickInterval: Double = 1.0
+                let lastTick = floor(oldValue / tickInterval) * tickInterval
+                let currentTick = floor(newValue / tickInterval) * tickInterval
+                if currentTick != lastTick {
+                    NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .default)
+                }
+            }
 
             // Time labels
             HStack {

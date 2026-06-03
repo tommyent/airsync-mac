@@ -16,6 +16,7 @@ struct ScreenView: View {
         VStack {
             ConnectionStatusPill()
                 .padding(.top, 4)
+                .whatsNewPopover(item: .connectionPill, arrowEdge: .top)
             
             ConnectionStateView()
                 .padding(.top, 4)
@@ -117,6 +118,15 @@ struct ScreenView: View {
 
         }
         .padding(8)
+        .onAppear {
+            WhatsNewTourManager.shared.evaluateActiveItem()
+        }
+        .onChange(of: appState.device) { _, _ in
+            WhatsNewTourManager.shared.evaluateActiveItem()
+        }
+        .onChange(of: appState.selectedTab) { _, _ in
+            WhatsNewTourManager.shared.evaluateActiveItem()
+        }
         .animation(
             .easeInOut(duration: 0.35),
             value: AppState.shared.adbConnected

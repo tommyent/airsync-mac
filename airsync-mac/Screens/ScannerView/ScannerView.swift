@@ -86,6 +86,7 @@ struct ScannerView: View {
                         Text("Available Devices")
                             .font(.headline)
                             .foregroundColor(.secondary)
+                            .whatsNewPopover(item: .nearbyDevices, arrowEdge: .top)
                         Spacer()
                     }
                     .transition(.opacity)
@@ -179,9 +180,13 @@ struct ScannerView: View {
         .onAppear {
             // Refresh device info for current network on load
             quickConnectManager.refreshDeviceForCurrentNetwork()
+            WhatsNewTourManager.shared.evaluateActiveItem()
         }
         .onChange(of: appState.selectedNetworkAdapterName) { _, _ in
             quickConnectManager.refreshDeviceForCurrentNetwork()
+        }
+        .onChange(of: allDiscoveredDevices) { _, _ in
+            WhatsNewTourManager.shared.evaluateActiveItem()
         }
     }
 }
