@@ -30,6 +30,38 @@ struct NotificationCardView: View {
                     Text(notification.body)
                         .font(.body)
 
+                    if let progressMax = notification.progressMax, progressMax > 0 {
+                        let progress = notification.progress ?? 0
+                        let isIndeterminate = notification.progressIndeterminate ?? false
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            if !isIndeterminate {
+                                HStack {
+                                    ProgressView(value: Double(progress), total: Double(progressMax))
+                                        .progressViewStyle(.linear)
+                                        .tint(.accentColor)
+                                    
+                                    Text("\(Int(Double(progress) / Double(progressMax) * 100))%")
+                                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                                        .foregroundColor(.secondary)
+                                        .frame(width: 32, alignment: .trailing)
+                                }
+                            } else {
+                                ProgressView()
+                                    .progressViewStyle(.linear)
+                                    .tint(.accentColor)
+                            }
+                        }
+                        .padding(.top, 4)
+                        .padding(.bottom, 2)
+                    } else if notification.progressIndeterminate == true {
+                        ProgressView()
+                            .progressViewStyle(.linear)
+                            .tint(.accentColor)
+                            .padding(.top, 4)
+                            .padding(.bottom, 2)
+                    }
+
                     if !notification.actions.isEmpty {
                         HStack(spacing: 8) {
                             ForEach(notification.actions) { action in

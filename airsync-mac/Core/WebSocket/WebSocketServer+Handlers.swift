@@ -237,7 +237,24 @@ extension WebSocketServer {
                     }
                 }
             }
-            let notif = Notification(title: title, body: body, app: app, nid: nid, package: package, priority: priority, actions: actions)
+            let progress = dict["progress"] as? Int
+            let progressMax = dict["progressMax"] as? Int
+            let progressIndeterminate = dict["progressIndeterminate"] as? Bool
+            let ongoing = dict["ongoing"] as? Bool
+            
+            let notif = Notification(
+                title: title,
+                body: body,
+                app: app,
+                nid: nid,
+                package: package,
+                priority: priority,
+                actions: actions,
+                progress: progress,
+                progressMax: progressMax,
+                progressIndeterminate: progressIndeterminate,
+                ongoing: ongoing
+            )
             DispatchQueue.main.async {
                 AppState.shared.addNotification(notif)
             }
