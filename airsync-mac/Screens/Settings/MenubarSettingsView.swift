@@ -55,65 +55,64 @@ struct MenubarSettingsView: View {
                             .toggleStyle(.switch)
                     }
 
-                    if appState.showMenubarText {
-                        VStack(spacing: 12) {
-                            HStack {
-                                Label(L("settings.menubar.maxLength"), systemImage: "arrow.left.and.right")
-                                Spacer()
-                                Slider(
-                                    value: Binding(
-                                        get: { Double(appState.menubarTextMaxLength) },
-                                        set: { appState.menubarTextMaxLength = Int($0) }
-                                    ),
-                                    in: 50...300,
-                                    step: 10,
-                                    onEditingChanged: { editing in
-                                        isDraggingTextLength = editing
-                                        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
-                                    }
-                                )
-                                .frame(width: 150)
-                                .controlSize(.small)
-                                .onChange(of: appState.menubarTextMaxLength) { oldValue, newValue in
-                                    guard isDraggingTextLength else { return }
-                                    if newValue != oldValue {
-                                        NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .default)
-                                    }
+                    VStack(spacing: 12) {
+                        HStack {
+                            Label(L("settings.menubar.maxLength"), systemImage: "arrow.left.and.right")
+                            Spacer()
+                            Slider(
+                                value: Binding(
+                                    get: { Double(appState.menubarTextMaxLength) },
+                                    set: { appState.menubarTextMaxLength = Int($0) }
+                                ),
+                                in: 50...300,
+                                step: 10,
+                                onEditingChanged: { editing in
+                                    isDraggingTextLength = editing
+                                    NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
                                 }
-                                
-                                Text("\(appState.menubarTextMaxLength)pt")
-                                    .font(.system(size: 11, design: .monospaced))
-                                    .foregroundColor(.secondary)
-                                    .frame(width: 36, alignment: .trailing)
-                            }
-
-                            HStack {
-                                Label(L("settings.menubar.enableMarquee"), systemImage: "play.right.to.left")
-                                Button(action: { showMarqueeInfo = true }) {
-                                    Image(systemName: "info.circle")
-                                        .foregroundStyle(.secondary)
+                            )
+                            .frame(width: 150)
+                            .controlSize(.small)
+                            .onChange(of: appState.menubarTextMaxLength) { oldValue, newValue in
+                                guard isDraggingTextLength else { return }
+                                if newValue != oldValue {
+                                    NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .default)
                                 }
-                                .buttonStyle(.plain)
-                                .alert(L("settings.menubar.enableMarquee"), isPresented: $showMarqueeInfo) {
-                                    Button("OK", role: .cancel) {}
-                                } message: {
-                                    Text(L("settings.menubar.enableMarquee.info"))
-                                }
-                                
-                                Spacer()
-                                Toggle("", isOn: $appState.enableMarquee)
-                                    .toggleStyle(.switch)
                             }
-
-                            HStack {
-                                Label(L("settings.menubar.showDeviceName"), systemImage: "iphone.gen3")
-                                Spacer()
-                                Toggle("", isOn: $appState.showMenubarDeviceName)
-                                    .toggleStyle(.switch)
-                            }
+                            
+                            Text("\(appState.menubarTextMaxLength)pt")
+                                .font(.system(size: 11, design: .monospaced))
+                                .foregroundColor(.secondary)
+                                .frame(width: 36, alignment: .trailing)
                         }
-                        .transition(.opacity.combined(with: .move(edge: .top)))
+
+                        HStack {
+                            Label(L("settings.menubar.enableMarquee"), systemImage: "play.right.to.left")
+                            Button(action: { showMarqueeInfo = true }) {
+                                Image(systemName: "info.circle")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                            .alert(L("settings.menubar.enableMarquee"), isPresented: $showMarqueeInfo) {
+                                Button("OK", role: .cancel) {}
+                            } message: {
+                                Text(L("settings.menubar.enableMarquee.info"))
+                            }
+                            
+                            Spacer()
+                            Toggle("", isOn: $appState.enableMarquee)
+                                .toggleStyle(.switch)
+                        }
+
+                        HStack {
+                            Label(L("settings.menubar.showDeviceName"), systemImage: "iphone.gen3")
+                            Spacer()
+                            Toggle("", isOn: $appState.showMenubarDeviceName)
+                                .toggleStyle(.switch)
+                        }
                     }
+                    .disabled(!appState.showMenubarText)
+                    .opacity(appState.showMenubarText ? 1.0 : 0.6)
 
                     HStack {
                         Label(L("settings.menubar.batteryStyle"), systemImage: "battery.100")
