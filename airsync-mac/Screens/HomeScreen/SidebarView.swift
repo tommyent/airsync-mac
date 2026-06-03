@@ -90,7 +90,7 @@ struct SidebarView: View {
                         }
                     }
                     .keyboardShortcut(
-                        "p",
+                        "d",
                         modifiers: [.command, .shift]
                     )
 
