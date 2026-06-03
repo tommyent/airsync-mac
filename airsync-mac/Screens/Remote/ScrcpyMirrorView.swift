@@ -283,13 +283,38 @@ struct ScrcpyMirrorView: View {
     
     private func startMirroring() {
         errorMessage = nil
-        ADBConnector.getWiredDeviceSerial { serial in
-            guard let serial = serial else {
+        let appState = AppState.shared
+        let wiredAdbEnabled = appState.wiredAdbEnabled
+        let wirelessAddress = "\(appState.adbConnectedIP):\(appState.adbPort)"
+        let adbConnected = appState.adbConnected
+        
+        ADBConnector.getWiredDevices { devices in
+            let mappedSerial = appState.selectedWiredSerial ?? (appState.device?.deviceId).flatMap { appState.deviceAdbSerials[$0] }
+            let serialToUse: String?
+            if let mapped = mappedSerial, devices.contains(where: { $0.serial == mapped }) {
+                serialToUse = mapped
+            } else if mappedSerial == nil {
+                serialToUse = devices.first?.serial
+            } else {
+                serialToUse = nil
+            }
+            
+            let finalSerial: String?
+            if wiredAdbEnabled, let serial = serialToUse {
+                finalSerial = serial
+            } else if adbConnected && !appState.adbConnectedIP.isEmpty {
+                finalSerial = wirelessAddress
+            } else {
+                finalSerial = nil
+            }
+            
+            guard let serial = finalSerial else {
                 DispatchQueue.main.async {
-                    self.errorMessage = "No wired ADB device detected. Please connect your device via USB."
+                    self.errorMessage = "No ADB device detected. Please connect your device via USB or Wi-Fi."
                 }
                 return
             }
+            
             ScrcpyServerManager.shared.startServer(serial: serial) { success in
                 guard success else {
                     DispatchQueue.main.async {
