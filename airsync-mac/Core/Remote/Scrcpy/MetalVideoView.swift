@@ -41,11 +41,19 @@ struct MetalVideoView: NSViewRepresentable {
             if let keycode = androidKeycode(for: event.keyCode) {
                 var metaState: UInt32 = 0
                 let flags = event.modifierFlags
+                let swap = UserDefaults.standard.object(forKey: "swapCmdAndCtrl") as? Bool ?? true
+                
                 if flags.contains(.shift) { metaState |= 0x01 }
                 if flags.contains(.option) { metaState |= 0x02 }
-                if flags.contains(.control) { metaState |= 0x1000 }
-                if flags.contains(.command) { metaState |= 0x10000 }
                 if flags.contains(.capsLock) { metaState |= 0x100000 }
+                
+                if swap {
+                    if flags.contains(.control) { metaState |= 0x10000 } // Control -> Meta
+                    if flags.contains(.command) { metaState |= 0x1000 }  // Command -> Control
+                } else {
+                    if flags.contains(.control) { metaState |= 0x1000 }
+                    if flags.contains(.command) { metaState |= 0x10000 }
+                }
                 
                 ScrcpyControlClient.shared.sendKeyEvent(action: 0, keycode: keycode, metaState: metaState)
             } else {
@@ -57,11 +65,19 @@ struct MetalVideoView: NSViewRepresentable {
             if let keycode = androidKeycode(for: event.keyCode) {
                 var metaState: UInt32 = 0
                 let flags = event.modifierFlags
+                let swap = UserDefaults.standard.object(forKey: "swapCmdAndCtrl") as? Bool ?? true
+                
                 if flags.contains(.shift) { metaState |= 0x01 }
                 if flags.contains(.option) { metaState |= 0x02 }
-                if flags.contains(.control) { metaState |= 0x1000 }
-                if flags.contains(.command) { metaState |= 0x10000 }
                 if flags.contains(.capsLock) { metaState |= 0x100000 }
+                
+                if swap {
+                    if flags.contains(.control) { metaState |= 0x10000 } // Control -> Meta
+                    if flags.contains(.command) { metaState |= 0x1000 }  // Command -> Control
+                } else {
+                    if flags.contains(.control) { metaState |= 0x1000 }
+                    if flags.contains(.command) { metaState |= 0x10000 }
+                }
                 
                 ScrcpyControlClient.shared.sendKeyEvent(action: 1, keycode: keycode, metaState: metaState)
             } else {
@@ -70,7 +86,18 @@ struct MetalVideoView: NSViewRepresentable {
         }
         
         private func androidKeycode(for macKeycode: UInt16) -> UInt32? {
+            let swap = UserDefaults.standard.object(forKey: "swapCmdAndCtrl") as? Bool ?? true
             switch macKeycode {
+            // Modifiers
+            case 59: return swap ? 117 : 113 // Left Control
+            case 55: return swap ? 113 : 117 // Left Command/Meta
+            case 58: return 57               // Left Option/Alt
+            case 56: return 59               // Left Shift
+            case 62: return swap ? 118 : 114 // Right Control
+            case 54: return swap ? 114 : 118 // Right Command/Meta
+            case 61: return 58               // Right Option/Alt
+            case 60: return 60               // Right Shift
+            
             // Letters
             case 0: return 29  // A
             case 11: return 30 // B
