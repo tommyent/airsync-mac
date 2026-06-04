@@ -20,7 +20,6 @@ struct AppGridView: View {
         } else {
             return appState.androidApps.values.filter {
                 $0.name.localizedCaseInsensitiveContains(searchText)
-                || $0.packageName.localizedCaseInsensitiveContains(searchText)
             }
         }
     }
