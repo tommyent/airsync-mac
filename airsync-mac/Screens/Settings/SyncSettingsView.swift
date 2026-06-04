@@ -13,13 +13,9 @@ struct SyncSettingsView: View {
     @State private var showingPlusPopover = false
     @State private var showRemoteSheet = false
 
+    @State private var showPairingSheet = false
     @AppStorage("showInControlCenter") private var showInControlCenter = false
     @State private var showControlCenterInfo = false
-    @State private var showPairingSheet = false
-
-    // State for notification permissions
-    @State private var notificationsGranted = false
-    @State private var notificationsChecked = false
 
     var body: some View {
         ScrollView {
@@ -167,44 +163,9 @@ struct SyncSettingsView: View {
                 .padding()
                 .glassBoxIfAvailable(radius: 18)
 
-                // 3. Notifications
-                headerSection(title: "Notifications Sync", icon: "bell.badge")
+                // 3. Media Playback
+                headerSection(title: "Media Playback", icon: "play.circle")
                 VStack {
-                    SettingsToggleView(name: "Sync notification dismissals", icon: "bell.badge", isOn: $appState.dismissNotif)
-
-                    HStack {
-                        Label("System Notifications", systemImage: "bell.badge")
-                        Spacer()
-
-                        if notificationsGranted {
-                            Picker("", selection: $appState.notificationSound) {
-                                Text("Default").tag("default")
-                                ForEach(SystemSounds.availableSounds, id: \.self) { sound in
-                                    Text(sound).tag(sound)
-                                }
-                            }
-                            .pickerStyle(MenuPickerStyle())
-                            .frame(minWidth: 100)
-
-                            Button(action: {
-                                SystemSounds.playSound(appState.notificationSound)
-                            }) {
-                                Image(systemName: "play.circle")
-                            }
-                            .buttonStyle(.borderless)
-                            .help("Test notification sound")
-                        } else {
-                            GlassButtonView(
-                                label: "Grant Permission",
-                                systemImage: "bell.badge",
-                                primary: true,
-                                action: {
-                                    openNotificationSettings()
-                                }
-                            )
-                        }
-                    }
-
                     SettingsToggleView(name: "Send now playing status", icon: "play.circle", isOn: $appState.sendNowPlayingStatus)
 
                     HStack {
@@ -233,33 +194,8 @@ struct SyncSettingsView: View {
                 }
                 .padding()
                 .glassBoxIfAvailable(radius: 18)
-                .onAppear {
-                    checkNotificationPermissions()
-                }
-                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-                    checkNotificationPermissions()
-                }
 
-                // 4. Call Alerts
-                headerSection(title: "Call Alerts", icon: "phone")
-                VStack {
-                    HStack {
-                        Label("Call Alert", systemImage: "phone")
-                        Spacer()
 
-                        Picker("", selection: $appState.callNotificationMode) {
-                            ForEach(CallNotificationMode.allCases, id: \.self) { mode in
-                                Text(mode.displayName).tag(mode)
-                            }
-                        }
-                        .pickerStyle(MenuPickerStyle())
-                        .frame(minWidth: 120)
-                    }
-
-                    SettingsToggleView(name: "Ring for calls", icon: "speaker.wave.3", isOn: $appState.ringForCalls)
-                }
-                .padding()
-                .glassBoxIfAvailable(radius: 18)
 
                 // 5. Remote Accessibility Control
                 headerSection(title: "Remote Accessibility", icon: "accessibility")
@@ -297,19 +233,5 @@ struct SyncSettingsView: View {
         .padding(.horizontal, 8)
     }
 
-    // MARK: - Notification Permission Helpers
-    func checkNotificationPermissions() {
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            DispatchQueue.main.async {
-                notificationsGranted = (settings.authorizationStatus == .authorized)
-                notificationsChecked = true
-            }
-        }
-    }
 
-    func openNotificationSettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
-            NSWorkspace.shared.open(url)
-        }
-    }
 }
