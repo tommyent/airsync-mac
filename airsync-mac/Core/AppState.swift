@@ -24,6 +24,7 @@ class AppState: ObservableObject {
     private var lastClipboardValue: String? = nil
     private var shouldSkipSave = false
     private var cancellables = Set<AnyCancellable>()
+    private var bleWakeUpWorkItem: DispatchWorkItem?
     private static let licenseDetailsKey = "licenseDetails"
 
     @Published var isOS26: Bool = true
@@ -206,23 +207,34 @@ class AppState: ObservableObject {
                 self.selectedTab = .notifications
             }
 
-            // BLE scan management: pause when a regular (non-BLE) connection is active
+            // BLE connection management: Wi-Fi priority over BLE
             let isRegularConnection = device?.ipAddress != nil && device?.ipAddress != "BLE"
             let wasRegularConnection = oldValue?.ipAddress != nil && oldValue?.ipAddress != "BLE"
 
-            if isRegularConnection && !wasRegularConnection {
-                // Regular connection established — stop BLE scanning to save power/bandwidth
-                if isBLEEnabled && BLECentralManager.shared.connectionStatus == .scanning {
-                    print("[state] Regular connection active — pausing BLE scan")
+            if isRegularConnection {
+                // Regular connection established — immediately put BLE to idle (disconnect & stop scan)
+                if isBLEEnabled {
+                    print("[state] Regular connection active — disconnecting BLE and putting to idle")
                     BLECentralManager.shared.stopScanning()
+                    BLECentralManager.shared.disconnect()
                 }
+                // Cancel any pending delayed BLE wake-up tasks
+                self.bleWakeUpWorkItem?.cancel()
+                self.bleWakeUpWorkItem = nil
             } else if !isRegularConnection && wasRegularConnection {
-                // Regular connection lost — resume BLE scanning if BLE is enabled and not already BLE-connected
-                if isBLEEnabled && !BLECentralManager.shared.isAuthenticated {
-                    print("[state] Regular connection lost — resuming BLE scan")
-                    BLECentralManager.shared.isManuallyDisconnected = false
-                    BLECentralManager.shared.startScanning()
+                // Regular connection lost — schedule BLE scanning after 5 seconds to give Wi-Fi a chance to reconnect
+                self.bleWakeUpWorkItem?.cancel()
+                let workItem = DispatchWorkItem { [weak self] in
+                    guard let self = self else { return }
+                    let stillDisconnected = self.device?.ipAddress == nil || self.device?.ipAddress == "BLE"
+                    if stillDisconnected && self.isBLEEnabled && !BLECentralManager.shared.isAuthenticated {
+                        print("[state] Regular connection stayed lost for 5s — resuming BLE scan")
+                        BLECentralManager.shared.isManuallyDisconnected = false
+                        BLECentralManager.shared.startScanning()
+                    }
                 }
+                self.bleWakeUpWorkItem = workItem
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5.0, execute: workItem)
             }
         }
     }
@@ -230,10 +242,7 @@ class AppState: ObservableObject {
     @Published var activeMacIp: String? = nil
     @Published var callEvents: [CallEvent] = []
     private var callDurationTimer: AnyCancellable?
-    var activeCallDurationSec: Int {
-        get { PlaybackState.shared.activeCallDurationSec }
-        set { PlaybackState.shared.activeCallDurationSec = newValue }
-    }
+    @Published var activeCallDurationSec: Int = 0
 
     @Published var activeCall: CallEvent? = nil {
         didSet {
@@ -314,10 +323,7 @@ class AppState: ObservableObject {
     @Published var temporaryDragLabel: String? = nil
     
     // MARK: - Centralized Media Seekbar State
-    var mediaPosition: Double {
-        get { PlaybackState.shared.mediaPosition }
-        set { PlaybackState.shared.mediaPosition = newValue }
-    }
+    @Published var mediaPosition: Double = 0
     var isDraggingMedia: Bool = false
     var lastMediaSeekTime: Date = .distantPast
     var seekTargetPosition: Double = -1

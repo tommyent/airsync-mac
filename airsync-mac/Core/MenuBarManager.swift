@@ -85,7 +85,8 @@ class MenuBarManager: NSObject {
             appState.$showingQuickShareTransfer.map { _ in () }.eraseToAnyPublisher(),
             appState.$showMenubarIcon.map { _ in () }.eraseToAnyPublisher(),
             appState.$showMenubarCallDetails.map { _ in () }.eraseToAnyPublisher(),
-            appState.$activeCall.map { _ in () }.eraseToAnyPublisher()
+            appState.$activeCall.map { _ in () }.eraseToAnyPublisher(),
+            appState.$activeCallDurationSec.map { _ in () }.eraseToAnyPublisher()
         ]
         
         let group2: [AnyPublisher<Void, Never>] = [
@@ -354,7 +355,7 @@ struct MenubarStatusView: View {
                                         .font(.system(size: appState.menubarFontSize))
                                         .foregroundColor(.secondary)
                                     
-                                    Text(formatCallDuration(seconds: PlaybackState.shared.activeCallDurationSec))
+                                    Text(formatCallDuration(seconds: appState.activeCallDurationSec))
                                         .font(.system(size: appState.menubarFontSize, design: .monospaced))
                                         .layoutPriority(1)
                                 }
