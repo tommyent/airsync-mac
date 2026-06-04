@@ -30,21 +30,43 @@ struct AppGridView: View {
             let columnsCount = max(1, Int((geometry.size.width + spacing) / (itemWidth + spacing)))
             let columns = Array(repeating: GridItem(.flexible(), spacing: spacing), count: columnsCount)
 
-            ScrollView {
-                LazyVGrid(columns: columns, spacing: 12) {
-                    ForEach(filteredApps.sorted(by: { $0.name.lowercased() < $1.name.lowercased() }), id: \.packageName) { app in
-                        AppGridItemView(app: app)
+            ZStack(alignment: .bottom) {
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        ForEach(filteredApps.sorted(by: { $0.name.lowercased() < $1.name.lowercased() }), id: \.packageName) { app in
+                            AppGridItemView(app: app)
+                        }
+                    }
+                    .padding(12)
+                    .padding(.bottom, 60)
+                }
+                .whatsNewPopover(item: .appsGrid, arrowEdge: .top)
+
+                // Liquid glass floating searchbar
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.secondary)
+
+                    TextField("Search Apps", text: $searchText)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 12))
+
+                    if !searchText.isEmpty {
+                        Button(action: { searchText = "" }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .padding(12)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .frame(width: 260)
+                .glassBoxIfAvailable(radius: 20)
+                .padding(.bottom, 16)
+                .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)
             }
-            .whatsNewPopover(item: .appsGrid, arrowEdge: .top)
         }
-        .searchable(
-            text: $searchText,
-            placement: .toolbar,
-            prompt: "Search Apps"
-        )
         .padding(0)
         .onAppear {
             WhatsNewTourManager.shared.evaluateActiveItem()
