@@ -27,15 +27,14 @@ struct PhoneView: View {
             let corner: CGFloat = 24
             ZStack {
                 // Wallpaper background layer(s) WITH 3D tilt
-                if !appState.isSidebarMirroring {
-                    FadingImageView(image: displayedImage, duration: 0.75)
-                        .overlay(
-                            LinearGradient(
-                                colors: [Color.black.opacity(0.35), Color.black.opacity(0.05)],
-                                startPoint: .top, endPoint: .bottom
-                            )
+                FadingImageView(image: displayedImage, duration: 0.75)
+                    .overlay(
+                        LinearGradient(
+                            colors: [Color.black.opacity(0.35), Color.black.opacity(0.05)],
+                            startPoint: .top, endPoint: .bottom
                         )
-                }
+                    )
+                    .opacity(appState.isSidebarMirroring ? 0 : 1)
 
                 // Seasonal Snowfall Overlay
 //                SnowfallView()
