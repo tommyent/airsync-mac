@@ -11,6 +11,8 @@ import SwiftUI
 struct AppGridView: View {
     @ObservedObject var appState = AppState.shared
     @State private var searchText: String = ""
+    @FocusState private var isSearchFocused: Bool
+    @State private var launchingPackageName: String? = nil
 
     var filteredApps: [AndroidApp] {
         if searchText.isEmpty {
@@ -32,9 +34,17 @@ struct AppGridView: View {
 
             ZStack(alignment: .bottom) {
                 ScrollView {
+                    let sorted = filteredApps.sorted(by: { $0.name.lowercased() < $1.name.lowercased() })
                     LazyVGrid(columns: columns, spacing: 12) {
-                        ForEach(filteredApps.sorted(by: { $0.name.lowercased() < $1.name.lowercased() }), id: \.packageName) { app in
-                            AppGridItemView(app: app)
+                        ForEach(Array(sorted.enumerated()), id: \.element.packageName) { index, app in
+                            AppGridItemView(
+                                app: app,
+                                isHighlighted: !searchText.isEmpty && index == 0,
+                                isLaunching: launchingPackageName == app.packageName,
+                                onLaunch: {
+                                    launchApp(app)
+                                }
+                            )
                         }
                     }
                     .padding(12)
@@ -50,6 +60,16 @@ struct AppGridView: View {
                     TextField("Search Apps", text: $searchText)
                         .textFieldStyle(.plain)
                         .font(.system(size: 12))
+                        .focused($isSearchFocused)
+                        .onSubmit {
+                            let sorted = filteredApps.sorted(by: { $0.name.lowercased() < $1.name.lowercased() })
+                            if let firstApp = sorted.first {
+                                launchApp(firstApp)
+                            }
+                        }
+                        .onExitCommand {
+                            searchText = ""
+                        }
 
                     if !searchText.isEmpty {
                         Button(action: { searchText = "" }) {
@@ -70,9 +90,35 @@ struct AppGridView: View {
         .padding(0)
         .onAppear {
             WhatsNewTourManager.shared.evaluateActiveItem()
+            isSearchFocused = true
         }
         .onChange(of: appState.selectedTab) { _, _ in
             WhatsNewTourManager.shared.evaluateActiveItem()
+        }
+        .onChange(of: isSearchFocused) { _, newValue in
+            if !newValue {
+                DispatchQueue.main.async {
+                    isSearchFocused = true
+                }
+            }
+        }
+    }
+
+    private func launchApp(_ app: AndroidApp) {
+        if let device = appState.device, appState.adbConnected {
+            launchingPackageName = app.packageName
+            appState.trackAppUse(app)
+            ADBConnector.startScrcpy(
+                ip: device.ipAddress,
+                port: appState.adbPort,
+                deviceName: device.name,
+                package: app.packageName
+            )
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                if launchingPackageName == app.packageName {
+                    launchingPackageName = nil
+                }
+            }
         }
     }
 }
@@ -80,18 +126,33 @@ struct AppGridView: View {
 // MARK: - App Grid Item
 private struct AppGridItemView: View {
     let app: AndroidApp
+    let isHighlighted: Bool
+    let isLaunching: Bool
+    let onLaunch: () -> Void
     @ObservedObject var appState = AppState.shared
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            AppIconButtonView(app: app)
-                .padding(8)
-                .glassBoxIfAvailable(radius: 15)
-                .onTapGesture(perform: handleTap)
-                .contextMenu {
-                    AppContextMenuContent(app: app)
+            ZStack {
+                AppIconButtonView(app: app)
+                    .padding(8)
+                    .glassBoxIfAvailable(radius: 15)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 15)
+                            .stroke(isHighlighted ? Color.accentColor : Color.clear, lineWidth: 2)
+                    )
+                    .opacity(isLaunching ? 0.4 : 1.0)
+
+                if isLaunching {
+                    ProgressView()
+                        .controlSize(.small)
                 }
-                .onDrag(createDragProvider)
+            }
+            .onTapGesture(perform: onLaunch)
+            .contextMenu {
+                AppContextMenuContent(app: app)
+            }
+            .onDrag(createDragProvider)
 
             // Notification mute indicator
             if !app.listening {
@@ -103,17 +164,7 @@ private struct AppGridItemView: View {
         }
     }
 
-    private func handleTap() {
-        if let device = appState.device, appState.adbConnected {
-            appState.trackAppUse(app)
-            ADBConnector.startScrcpy(
-                ip: device.ipAddress,
-                port: appState.adbPort,
-                deviceName: device.name,
-                package: app.packageName
-            )
-        }
-    }
+
 
     private func createDragProvider() -> NSItemProvider {
         let provider = NSItemProvider()
