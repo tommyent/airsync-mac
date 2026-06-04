@@ -16,22 +16,23 @@ struct NotificationsSettingsView: View {
     // State for notification permissions
     @State private var notificationsGranted = false
     @State private var notificationsChecked = false
+    @State private var selectedSettingsApp: AndroidApp? = nil
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // 1. Notifications Sync
-                headerSection(title: "Notifications Sync", icon: "bell.badge")
+                headerSection(title: L("settings.notifications.sync"), icon: "bell.badge")
                 VStack {
-                    SettingsToggleView(name: "Sync notification dismissals", icon: "bell.badge", isOn: $appState.dismissNotif)
+                    SettingsToggleView(name: L("settings.notifications.dismiss"), icon: "bell.badge", isOn: $appState.dismissNotif)
 
                     HStack {
-                        Label("System Notifications", systemImage: "bell.badge")
+                        Label(L("settings.notifications.system"), systemImage: "bell.badge")
                         Spacer()
 
                         if notificationsGranted {
                             Picker("", selection: $appState.notificationSound) {
-                                Text("Default").tag("default")
+                                Text(L("settings.notifications.sound.default")).tag("default")
                                 ForEach(SystemSounds.availableSounds, id: \.self) { sound in
                                     Text(sound).tag(sound)
                                 }
@@ -48,7 +49,7 @@ struct NotificationsSettingsView: View {
                             .help("Test notification sound")
                         } else {
                             GlassButtonView(
-                                label: "Grant Permission",
+                                label: L("settings.notifications.grant"),
                                 systemImage: "bell.badge",
                                 primary: true,
                                 action: {
@@ -68,10 +69,10 @@ struct NotificationsSettingsView: View {
                 }
 
                 // 2. Call Alerts
-                headerSection(title: "Call Alerts", icon: "phone")
+                headerSection(title: L("settings.notifications.calls"), icon: "phone")
                 VStack {
                     HStack {
-                        Label("Call Alert", systemImage: "phone")
+                        Label(L("settings.notifications.callAlert"), systemImage: "phone")
                         Spacer()
 
                         Picker("", selection: $appState.callNotificationMode) {
@@ -83,7 +84,7 @@ struct NotificationsSettingsView: View {
                         .frame(minWidth: 120)
                     }
 
-                    SettingsToggleView(name: "Ring for calls", icon: "speaker.wave.3", isOn: $appState.ringForCalls)
+                    SettingsToggleView(name: L("settings.notifications.ring"), icon: "speaker.wave.3", isOn: $appState.ringForCalls)
                 }
                 .padding()
                 .glassBoxIfAvailable(radius: 18)
@@ -91,46 +92,63 @@ struct NotificationsSettingsView: View {
                 // 3. Apps
                 headerSection(title: L("settings.notifications.apps"), icon: "app.badge")
                 VStack(spacing: 12) {
-                    let sortedApps = appState.androidApps.values.sorted(by: { $0.name.lowercased() < $1.name.lowercased() })
-                    if sortedApps.isEmpty {
-                        Text("No apps found")
+                    if appState.device == nil {
+                        Text(L("settings.notifications.apps.connect"))
                             .foregroundColor(.secondary)
                             .padding(.vertical, 8)
                     } else {
-                        ForEach(sortedApps, id: \.packageName) { app in
-                            HStack {
-                                if let iconPath = app.iconUrl,
-                                   let image = Image(filePath: iconPath) {
-                                    image
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 24, height: 24)
-                                        .cornerRadius(4)
-                                } else {
-                                    Image(systemName: "app.badge")
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 24, height: 24)
-                                        .foregroundColor(.gray)
+                        let sortedApps = appState.androidApps.values.sorted(by: { $0.name.lowercased() < $1.name.lowercased() })
+                        if sortedApps.isEmpty {
+                            Text(L("settings.notifications.apps.none"))
+                                .foregroundColor(.secondary)
+                                .padding(.vertical, 8)
+                        } else {
+                            ForEach(sortedApps, id: \.packageName) { app in
+                                HStack {
+                                    if let iconPath = app.iconUrl,
+                                       let image = Image(filePath: iconPath) {
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 24, height: 24)
+                                            .cornerRadius(4)
+                                    } else {
+                                        Image(systemName: "app.badge")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 24, height: 24)
+                                            .foregroundColor(.gray)
+                                    }
+                                    
+                                    Text(app.name)
+                                        .font(.body)
+                                    
+                                    Spacer()
+                                    
+                                    Button(action: {
+                                        selectedSettingsApp = app
+                                    }) {
+                                        Image(systemName: "gearshape")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(app.listening ? .primary : .secondary.opacity(0.5))
+                                    }
+                                    .buttonStyle(.plain)
+                                    .disabled(!app.listening)
+                                    .padding(.trailing, 8)
+                                    
+                                    Toggle("", isOn: Binding(
+                                        get: { app.listening },
+                                        set: { newValue in
+                                            WebSocketServer.shared.toggleNotification(for: app.packageName, to: newValue)
+                                        }
+                                    ))
+                                    .toggleStyle(.switch)
+                                    .labelsHidden()
                                 }
                                 
-                                Text(app.name)
-                                    .font(.body)
-                                
-                                Spacer()
-                                
-                                Toggle("", isOn: Binding(
-                                    get: { app.listening },
-                                    set: { newValue in
-                                        WebSocketServer.shared.toggleNotification(for: app.packageName, to: newValue)
-                                    }
-                                ))
-                                .toggleStyle(.switch)
-                                .labelsHidden()
-                            }
-                            
-                            if app.packageName != sortedApps.last?.packageName {
-                                Divider()
+                                if app.packageName != sortedApps.last?.packageName {
+                                    Divider()
+                                }
                             }
                         }
                     }
@@ -139,6 +157,9 @@ struct NotificationsSettingsView: View {
                 .glassBoxIfAvailable(radius: 18)
             }
             .padding()
+        }
+        .sheet(item: $selectedSettingsApp) { app in
+            AppNotificationSettingsView(app: app)
         }
     }
 

@@ -164,7 +164,7 @@ struct SyncSettingsView: View {
                 .glassBoxIfAvailable(radius: 18)
 
                 // 3. Media Playback
-                headerSection(title: "Media Playback", icon: "play.circle")
+                headerSection(title: L("settings.notifications.mediaPlayback"), icon: "play.circle")
                 VStack {
                     SettingsToggleView(name: "Send now playing status", icon: "play.circle", isOn: $appState.sendNowPlayingStatus)
 
