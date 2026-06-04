@@ -658,7 +658,9 @@ extension WebSocketServer {
     private func handleRemoteControl(_ message: Message) {
         if let dict = message.data.value as? [String: Any],
            let action = dict["action"] as? String {
+            #if DEBUG
             print("[WebSocketServer] Received remote action: \(action)")
+            #endif
             
             switch action {
             case "keypress":
