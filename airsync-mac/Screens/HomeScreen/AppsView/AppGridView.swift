@@ -15,11 +15,34 @@ struct AppGridView: View {
     @State private var launchingPackageName: String? = nil
 
     var filteredApps: [AndroidApp] {
-        if searchText.isEmpty {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if query.isEmpty {
             return Array(appState.androidApps.values)
         } else {
             return appState.androidApps.values.filter {
-                $0.name.localizedCaseInsensitiveContains(searchText)
+                $0.name.localizedCaseInsensitiveContains(query)
+            }
+        }
+    }
+
+    var sortedAppsList: [AndroidApp] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if query.isEmpty {
+            return filteredApps.sorted(by: { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending })
+        } else {
+            let lowerQuery = query.lowercased()
+            return filteredApps.sorted { app1, app2 in
+                let name1 = app1.name.lowercased()
+                let name2 = app2.name.lowercased()
+                
+                let starts1 = name1.hasPrefix(lowerQuery)
+                let starts2 = name2.hasPrefix(lowerQuery)
+                
+                if starts1 != starts2 {
+                    return starts1
+                }
+                
+                return app1.name.localizedCaseInsensitiveCompare(app2.name) == .orderedAscending
             }
         }
     }
@@ -33,12 +56,12 @@ struct AppGridView: View {
 
             ZStack(alignment: .bottom) {
                 ScrollView {
-                    let sorted = filteredApps.sorted(by: { $0.name.lowercased() < $1.name.lowercased() })
+                    let sorted = sortedAppsList
                     LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(Array(sorted.enumerated()), id: \.element.packageName) { index, app in
                             AppGridItemView(
                                 app: app,
-                                isHighlighted: !searchText.isEmpty && index == 0,
+                                isHighlighted: !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && index == 0,
                                 isLaunching: launchingPackageName == app.packageName,
                                 onLaunch: {
                                     launchApp(app)
@@ -51,39 +74,55 @@ struct AppGridView: View {
                 }
                 .whatsNewPopover(item: .appsGrid, arrowEdge: .top)
 
-                // Liquid glass floating searchbar
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.secondary)
-
-                    TextField("Search Apps", text: $searchText)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 12))
-                        .focused($isSearchFocused)
-                        .onSubmit {
-                            let sorted = filteredApps.sorted(by: { $0.name.lowercased() < $1.name.lowercased() })
-                            if let firstApp = sorted.first {
-                                launchApp(firstApp)
-                            }
-                        }
-                        .onExitCommand {
-                            searchText = ""
-                        }
-
-                    if !searchText.isEmpty {
-                        Button(action: { searchText = "" }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.secondary)
-                        }
-                        .buttonStyle(.plain)
+                // Hint Chip & Floating Searchbar VStack
+                VStack(spacing: 8) {
+                    if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text("Press ⏎ to launch")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .glassBoxIfAvailable(radius: 12)
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .scale(scale: 0.9)).combined(with: .move(edge: .bottom)),
+                                removal: .opacity.combined(with: .scale(scale: 0.9)).combined(with: .move(edge: .bottom))
+                            ))
                     }
+
+                    // Liquid glass floating searchbar
+                    HStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.secondary)
+
+                        TextField("Search Apps", text: $searchText)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 12))
+                            .focused($isSearchFocused)
+                            .onSubmit {
+                                if let firstApp = sortedAppsList.first {
+                                    launchApp(firstApp)
+                                }
+                            }
+                            .onExitCommand {
+                                searchText = ""
+                            }
+
+                        if !searchText.isEmpty {
+                            Button(action: { searchText = "" }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .frame(width: 260)
+                    .glassBoxIfAvailable(radius: 20)
+                    .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .frame(width: 260)
-                .glassBoxIfAvailable(radius: 20)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .padding(.bottom, 16)
-                .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)
             }
         }
         .padding(0)
