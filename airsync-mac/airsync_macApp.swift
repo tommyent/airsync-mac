@@ -91,6 +91,9 @@ struct airsync_macApp: App {
                         if !appState.isNativeMirroring {
                             dismissWindow(id: "nativeMirror")
                         }
+                        if !appState.isNativeDesktopMirroring {
+                            dismissWindow(id: "nativeDesktopMirror")
+                        }
                         if appState.activeCall == nil || appState.callNotificationMode != .popup {
                             dismissWindow(id: "callWindow")
                         }
@@ -130,11 +133,24 @@ struct airsync_macApp: App {
                 dismissWindow(id: "nativeMirror")
             }
         }
+        .onChange(of: appState.isNativeDesktopMirroring) { oldValue, newValue in
+            if newValue {
+                openWindow(id: "nativeDesktopMirror")
+            } else {
+                dismissWindow(id: "nativeDesktopMirror")
+            }
+        }
         .commands {
             CommandGroup(after: .appInfo) {
                 CheckForUpdatesView(updater: updaterController.updater)
             }
             CommandGroup(replacing: .newItem) { }
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings...") {
+                    AppState.shared.selectedTab = .settings
+                }
+                .keyboardShortcut(",")
+            }
             CommandGroup(replacing: .help) {
                 Button(action: {
                     if let url = URL(string: "https://airsync.notion.site") {
@@ -252,6 +268,21 @@ struct airsync_macApp: App {
         }
         .windowResizability(.contentSize)
         .defaultSize(width: 320, height: 680)
+        .windowStyle(.hiddenTitleBar)
+        .defaultPosition(.center)
+
+        Window("Desktop Mirror", id: "nativeDesktopMirror") {
+            if #available(macOS 15.0, *) {
+                NativeDesktopMirrorView()
+                    .environmentObject(appState)
+                    .containerBackground(.ultraThinMaterial, for: .window)
+            } else {
+                NativeDesktopMirrorView()
+                    .environmentObject(appState)
+            }
+        }
+        .windowResizability(.contentSize)
+        .defaultSize(width: 900, height: 560)
         .windowStyle(.hiddenTitleBar)
         .defaultPosition(.center)
 

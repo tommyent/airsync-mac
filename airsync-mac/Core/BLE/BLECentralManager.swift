@@ -212,6 +212,12 @@ extension BLECentralManager: CBCentralManagerDelegate {
         
         // Auto connect if enabled and not manually disconnected
         if AppState.shared.isBLEAutoConnectEnabled && !isManuallyDisconnected {
+            let isWifiConnected = AppState.shared.device != nil && AppState.shared.device?.ipAddress != "BLE" && AppState.shared.device?.ipAddress != "Bluetooth LE"
+            if isWifiConnected {
+                print("[BLE] Regular Wi-Fi connection is active — skipping auto-connect to BLE")
+                return
+            }
+            
             let token = UserDefaults.standard.string(forKey: "bleAuthToken") ?? ""
             if token.isEmpty {
                 return

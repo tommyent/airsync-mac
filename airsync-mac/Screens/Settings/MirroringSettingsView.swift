@@ -27,200 +27,247 @@ struct MirroringSettingsView: View {
     @State private var xCoords: String = "0"
     @State private var yCoords: String = "0"
 
-    var body: some View {
-        Group {
-            if appState.isPlus {
-                unlockedMirroringView
-            } else {
-                lockedMirroringView
-            }
-        }
-    }
+    @AppStorage("swapCmdAndCtrl") private var swapCmdAndCtrl = true
+    @AppStorage("showMirrorControls") private var showMirrorControls = true
 
-    private var unlockedMirroringView: some View {
+    var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                VStack{
-                    HStack{
-                        Label(L("settings.mirroring.defaultMode"), systemImage: "rectangle.on.rectangle.badge.gearshape")
-                        Spacer()
-                        Picker("", selection: $appState.useNativeMirroringByDefault) {
-                            Label(L("settings.mirroring.scrcpy.title"), systemImage: "macwindow").tag(false)
-                            Label(L("settings.mirroring.native.title"), systemImage: "apps.iphone").tag(true)
-                            //                        Text(L("settings.mirroring.scrcpy.title")).tag(false)
-                            //                        Text(L("settings.mirroring.native.title")).tag(true)
-                        }
-                        .pickerStyle(.segmented)
-                        .controlSize(.large)
-                    }
-
-                    Spacer(minLength: 8)
-
-                    if(appState.useNativeMirroringByDefault) {
-                        Text(L("settings.mirroring.native.info"))
-                            .font(.caption)
-                    } else {
-                        Text(L("settings.mirroring.scrcpy.info"))
-                            .font(.caption)
-                    }
+                if appState.isPlus {
+                    unlockedMirroringViewContent
+                } else {
+                    androidMirroringSection
+                    lockedMirroringViewContent
                 }
-                .padding()
-
-                headerSection(title: L("settings.mirroring.appMirroring"), icon: "apps.iphone.badge.plus")
-
-                VStack(spacing: 16) {
-                    HStack {
-                        Label(L("settings.mirroring.enableAppMirroring"), systemImage: "apps.iphone.badge.plus")
-                        Spacer()
-                        Toggle("", isOn: $appState.mirroringPlus)
-                            .toggleStyle(.switch)
-                    }
-
-                    Divider()
-
-                    VStack(spacing: 12) {
-                        HStack {
-                            Text(L("settings.mirroring.videoBitrate"))
-                            Spacer()
-
-                            Slider(
-                                value: $tempBitrate,
-                                in: 1...12,
-                                step: 1,
-                                onEditingChanged: { editing in
-                                    if !editing {
-                                        AppState.shared.scrcpyBitrate = Int(tempBitrate)
-                                    }
-                                    if editing {
-                                        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
-                                    } else {
-                                        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
-                                    }
-                                    isDraggingBitrate = editing
-                                    isDragging = editing
-                                }
-                            )
-                            .focusable(false)
-                            .frame(maxWidth: 150)
-                            .onChange(of: tempBitrate) { oldValue, newValue in
-                                guard isDraggingBitrate else { return }
-                                if newValue != oldValue {
-                                    NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .default)
-                                }
-                            }
-
-                            Text(String(format: L("settings.mirroring.bitrateFormat"), AppState.shared.scrcpyBitrate))
-                                .monospacedDigit()
-                                .foregroundColor(isDragging ? .accentColor : .secondary)
-                                .frame(width: 60, alignment: .leading)
-                        }
-
-                        HStack {
-                            Text(L("settings.mirroring.maxSize"))
-                            Spacer()
-
-                            Slider(
-                                value: $tempResolution,
-                                in: 800...2600,
-                                step: 200,
-                                onEditingChanged: { editing in
-                                    if !editing {
-                                        AppState.shared.scrcpyResolution = Int(tempResolution)
-                                    }
-                                    if editing {
-                                        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
-                                    } else {
-                                        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
-                                    }
-                                    isDraggingResolution = editing
-                                    isDragging = editing
-                                }
-                            )
-                            .focusable(false)
-                            .frame(maxWidth: 150)
-                            .onChange(of: tempResolution) { oldValue, newValue in
-                                guard isDraggingResolution else { return }
-                                if newValue != oldValue {
-                                    NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .default)
-                                }
-                            }
-
-                            Text("\(AppState.shared.scrcpyResolution)")
-                                .monospacedDigit()
-                                .foregroundColor(isDragging ? .accentColor : .secondary)
-                                .frame(width: 60, alignment: .leading)
-                        }
-
-                        SettingsToggleView(name: L("settings.mirroring.stayOnTop"), icon: "inset.filled.toptrailing.rectangle.portrait", isOn: $scrcpyOnTop)
-
-                        SettingsToggleView(name: L("settings.mirroring.stayAwake"), icon: "cup.and.heat.waves", isOn: $stayAwake)
-
-                        SettingsToggleView(name: L("settings.mirroring.blankDisplay"), icon: "iphone.gen3.slash", isOn: $turnScreenOff)
-
-                        SettingsToggleView(name: L("settings.mirroring.noAudio"), icon: "speaker.slash", isOn: $noAudio)
-
-                        SettingsToggleView(name: L("settings.mirroring.continueApp"), icon: "arrow.turn.up.forward.iphone", isOn: $continueApp)
-
-                        SettingsToggleView(name: L("settings.mirroring.directKeyboardInput"), icon: "keyboard.chevron.compact.down", isOn: $directKeyInput)
-
-                        HStack {
-                            Text(L("settings.mirroring.dpi"))
-                            Spacer()
-                            TextField(L("settings.mirroring.dpi"), text: Binding(
-                                get: { UserDefaults.standard.scrcpyDesktopDpi },
-                                set: { newValue in
-                                    UserDefaults.standard.scrcpyDesktopDpi = newValue.filter { "0123456789".contains($0) }
-                                }
-                            ))
-                            .textFieldStyle(.roundedBorder)
-                            .frame(maxWidth: 60)
-                        }
-
-                        HStack {
-                            Text(L("settings.mirroring.manualPosition"))
-                            Spacer()
-
-                            TextField(L("settings.mirroring.x"), text: $xCoords)
-                                .textFieldStyle(.roundedBorder)
-                                .onChange(of: xCoords) { oldValue, newValue in
-                                    xCoords = newValue.filter { "0123456789".contains($0) }
-                                }
-                                .disabled(!manualPosition)
-
-                            TextField(L("settings.mirroring.y"), text: $yCoords)
-                                .textFieldStyle(.roundedBorder)
-                                .onChange(of: yCoords) { oldValue, newValue in
-                                    yCoords = newValue.filter { "0123456789".contains($0) }
-                                }
-                                .disabled(!manualPosition)
-
-                            GlassButtonView(
-                                label: L("settings.mirroring.set"),
-                                action: {
-                                    UserDefaults.standard.manualPositionCoords = [xCoords, yCoords]
-                                }
-                            )
-                            .disabled(xCoords.isEmpty || yCoords.isEmpty || !manualPosition)
-
-                            Toggle("", isOn: $manualPosition)
-                                .toggleStyle(.switch)
-                        }
-                    }
-                }
-                .padding()
-                .glassBoxIfAvailable(radius: 18)
             }
             .padding()
         }
         .onAppear {
             tempBitrate = Double(AppState.shared.scrcpyBitrate)
             tempResolution = Double(AppState.shared.scrcpyResolution)
-            xCoords = UserDefaults.standard.manualPositionCoords[0]
-            yCoords = UserDefaults.standard.manualPositionCoords[1]
+            let coords = UserDefaults.standard.manualPositionCoords
+            xCoords = coords.indices.contains(0) ? coords[0] : "0"
+            yCoords = coords.indices.contains(1) ? coords[1] : "0"
         }
     }
 
-    private var lockedMirroringView: some View {
+    private var androidMirroringSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            headerSection(title: L("settings.mirroring.androidMirroring"), icon: "keyboard")
+            
+            VStack(spacing: 12) {
+                SettingsToggleView(
+                    name: L("settings.mirroring.swapCmdCtrl"),
+                    icon: "arrow.triangle.2.circlepath",
+                    isOn: $swapCmdAndCtrl
+                )
+                
+                SettingsToggleView(
+                    name: L("settings.mirroring.showMirrorControls"),
+                    icon: "sidebar.left",
+                    isOn: $showMirrorControls
+                )
+            }
+            .padding()
+            .glassBoxIfAvailable(radius: 18)
+        }
+    }
+
+    private var unlockedMirroringViewContent: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(spacing: 16) {
+                HStack{
+                    Label(L("settings.mirroring.defaultMode"), systemImage: "iphone")
+                    Spacer()
+                    Picker("", selection: $appState.useNativeMirroringByDefault) {
+                        Text(L("settings.mirroring.scrcpy.title")).tag(false)
+                        Text(L("settings.mirroring.native.title")).tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .controlSize(.large)
+                }
+
+                if(appState.useNativeMirroringByDefault) {
+                    Text(L("settings.mirroring.native.info"))
+                        .font(.caption)
+                } else {
+                    Text(L("settings.mirroring.scrcpy.info"))
+                        .font(.caption)
+                }
+            }
+            .padding()
+            .glassBoxIfAvailable(radius: 18)
+
+            VStack(spacing: 16) {
+                HStack{
+                    Label(L("settings.mirroring.desktop.defaultMode"), systemImage: "desktopcomputer")
+                    Spacer()
+                    Picker("", selection: $appState.useNativeDesktopMirroringByDefault) {
+                        Text(L("settings.mirroring.scrcpy.title")).tag(false)
+                        Text(L("settings.mirroring.native.title")).tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .controlSize(.large)
+                }
+
+                Text(appState.useNativeDesktopMirroringByDefault
+                     ? "Uses the built-in stream for desktop mode — no scrcpy binary required."
+                     : "Launches desktop mode via the scrcpy binary.")
+                    .font(.caption)
+            }
+            .padding()
+            .glassBoxIfAvailable(radius: 18)
+
+            
+            androidMirroringSection
+
+            headerSection(title: L("settings.mirroring.appMirroring"), icon: "apps.iphone.badge.plus")
+
+            VStack(spacing: 16) {
+                HStack {
+                    Label(L("settings.mirroring.enableAppMirroring"), systemImage: "apps.iphone.badge.plus")
+                    Spacer()
+                    Toggle("", isOn: $appState.mirroringPlus)
+                        .toggleStyle(.switch)
+                }
+
+                Divider()
+
+                VStack(spacing: 12) {
+                    HStack {
+                        Text(L("settings.mirroring.videoBitrate"))
+                        Spacer()
+
+                        Slider(
+                            value: $tempBitrate,
+                            in: 1...12,
+                            step: 1,
+                            onEditingChanged: { editing in
+                                if !editing {
+                                    AppState.shared.scrcpyBitrate = Int(tempBitrate)
+                                }
+                                if editing {
+                                    NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
+                                } else {
+                                    NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
+                                }
+                                isDraggingBitrate = editing
+                                isDragging = editing
+                            }
+                        )
+                        .focusable(false)
+                        .frame(maxWidth: 150)
+                        .onChange(of: tempBitrate) { oldValue, newValue in
+                            guard isDraggingBitrate else { return }
+                            if newValue != oldValue {
+                                NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .default)
+                            }
+                        }
+
+                        Text(String(format: L("settings.mirroring.bitrateFormat"), AppState.shared.scrcpyBitrate))
+                            .monospacedDigit()
+                            .foregroundColor(isDragging ? .accentColor : .secondary)
+                            .frame(width: 60, alignment: .leading)
+                    }
+
+                    HStack {
+                        Text(L("settings.mirroring.maxSize"))
+                        Spacer()
+
+                        Slider(
+                            value: $tempResolution,
+                            in: 800...2600,
+                            step: 200,
+                            onEditingChanged: { editing in
+                                if !editing {
+                                    AppState.shared.scrcpyResolution = Int(tempResolution)
+                                }
+                                if editing {
+                                    NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
+                                } else {
+                                    NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
+                                }
+                                isDraggingResolution = editing
+                                isDragging = editing
+                            }
+                        )
+                        .focusable(false)
+                        .frame(maxWidth: 150)
+                        .onChange(of: tempResolution) { oldValue, newValue in
+                            guard isDraggingResolution else { return }
+                            if newValue != oldValue {
+                                NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .default)
+                            }
+                        }
+
+                        Text("\(AppState.shared.scrcpyResolution)")
+                            .monospacedDigit()
+                            .foregroundColor(isDragging ? .accentColor : .secondary)
+                            .frame(width: 60, alignment: .leading)
+                    }
+
+                    SettingsToggleView(name: L("settings.mirroring.stayOnTop"), icon: "inset.filled.toptrailing.rectangle.portrait", isOn: $scrcpyOnTop)
+
+                    SettingsToggleView(name: L("settings.mirroring.stayAwake"), icon: "cup.and.heat.waves", isOn: $stayAwake)
+
+                    SettingsToggleView(name: L("settings.mirroring.blankDisplay"), icon: "iphone.gen3.slash", isOn: $turnScreenOff)
+
+                    SettingsToggleView(name: L("settings.mirroring.noAudio"), icon: "speaker.slash", isOn: $noAudio)
+
+                    SettingsToggleView(name: L("settings.mirroring.continueApp"), icon: "arrow.turn.up.forward.iphone", isOn: $continueApp)
+
+                    SettingsToggleView(name: L("settings.mirroring.directKeyboardInput"), icon: "keyboard.chevron.compact.down", isOn: $directKeyInput)
+
+                    HStack {
+                        Text(L("settings.mirroring.dpi"))
+                        Spacer()
+                        TextField(L("settings.mirroring.dpi"), text: Binding(
+                            get: { UserDefaults.standard.scrcpyDesktopDpi },
+                            set: { newValue in
+                                UserDefaults.standard.scrcpyDesktopDpi = newValue.filter { "0123456789".contains($0) }
+                            }
+                        ))
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 60)
+                    }
+
+                    HStack {
+                        Text(L("settings.mirroring.manualPosition"))
+                        Spacer()
+
+                        TextField(L("settings.mirroring.x"), text: $xCoords)
+                            .textFieldStyle(.roundedBorder)
+                            .onChange(of: xCoords) { oldValue, newValue in
+                                xCoords = newValue.filter { "0123456789".contains($0) }
+                            }
+                            .disabled(!manualPosition)
+
+                        TextField(L("settings.mirroring.y"), text: $yCoords)
+                            .textFieldStyle(.roundedBorder)
+                            .onChange(of: yCoords) { oldValue, newValue in
+                                yCoords = newValue.filter { "0123456789".contains($0) }
+                            }
+                            .disabled(!manualPosition)
+
+                        GlassButtonView(
+                            label: L("settings.mirroring.set"),
+                            action: {
+                                UserDefaults.standard.manualPositionCoords = [xCoords, yCoords]
+                            }
+                        )
+                        .disabled(xCoords.isEmpty || yCoords.isEmpty || !manualPosition)
+
+                        Toggle("", isOn: $manualPosition)
+                            .toggleStyle(.switch)
+                    }
+                }
+            }
+            .padding()
+            .glassBoxIfAvailable(radius: 18)
+        }
+    }
+
+    private var lockedMirroringViewContent: some View {
         VStack(spacing: 20) {
             Spacer()
 
@@ -239,7 +286,6 @@ struct MirroringSettingsView: View {
 
             Spacer()
         }
-        .padding()
     }
 
     @ViewBuilder

@@ -10,6 +10,7 @@ import SwiftUI
 enum SettingsTab: String, CaseIterable, Identifiable {
     case myMac = "my_mac"
     case sync = "sync"
+    case notifications = "notifications"
     case mirroring = "mirroring"
     case quickShare = "quick_share"
     case menubar = "menubar"
@@ -24,6 +25,8 @@ enum SettingsTab: String, CaseIterable, Identifiable {
             return L("settings.myMac")
         case .sync:
             return L("settings.sync")
+        case .notifications:
+            return L("settings.notifications")
         case .mirroring:
             return L("settings.mirroring")
         case .quickShare:
@@ -43,6 +46,8 @@ enum SettingsTab: String, CaseIterable, Identifiable {
             return DeviceTypeUtil.deviceIconName()
         case .sync:
             return "arrow.triangle.2.circlepath"
+        case .notifications:
+            return "bell"
         case .mirroring:
             return "apps.iphone.badge.plus"
         case .quickShare:

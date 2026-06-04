@@ -35,6 +35,7 @@ class WebSocketServer: ObservableObject {
     internal let networkCheckInterval: TimeInterval = 10.0
     internal let lock = NSRecursiveLock()
     internal let fileQueue = DispatchQueue(label: "com.airsync.fileio")
+    private let jsonDecoder = JSONDecoder()
     
     internal var servers: [String: HttpServer] = [:]
     internal var isListeningOnAll = false
@@ -182,7 +183,7 @@ class WebSocketServer: ObservableObject {
 
                 if let data = decryptedText.data(using: .utf8) {
                     do {
-                        let message = try JSONDecoder().decode(Message.self, from: data)
+                        let message = try self.jsonDecoder.decode(Message.self, from: data)
                         self.lock.lock()
                         self.lastActivity[ObjectIdentifier(session)] = Date()
                         self.lock.unlock()

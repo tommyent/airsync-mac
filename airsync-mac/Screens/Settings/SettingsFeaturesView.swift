@@ -293,8 +293,9 @@ struct SettingsFeaturesView: View {
             .padding()
             .glassBoxIfAvailable(radius: 18)
             .onAppear{
-                xCoords = UserDefaults.standard.manualPositionCoords[0]
-                yCoords = UserDefaults.standard.manualPositionCoords[1]
+                let coords = UserDefaults.standard.manualPositionCoords
+                xCoords = coords.indices.contains(0) ? coords[0] : "0"
+                yCoords = coords.indices.contains(1) ? coords[1] : "0"
             }
 
             // Clipboard Sync

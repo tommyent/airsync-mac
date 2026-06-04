@@ -118,16 +118,36 @@ struct TopSegmentView: View {
                                     appState.isNativeMirroring = true
                                 }
                             }
-                            
-                            Button("Desktop Mode") {
-                                ADBConnector.startScrcpy(
-                                    ip: appState.device?.ipAddress ?? "",
-                                    port: appState.adbPort,
-                                    deviceName: appState.device?.name ?? "My Phone",
-                                    desktop: true
-                                )
+
+                            Divider()
+
+                            if appState.useNativeDesktopMirroringByDefault {
+                                Button("Native Desktop") {
+                                    appState.isNativeDesktopMirroring = true
+                                }
+                                Button("scrcpy Desktop") {
+                                    ADBConnector.startScrcpy(
+                                        ip: appState.device?.ipAddress ?? "",
+                                        port: appState.adbPort,
+                                        deviceName: appState.device?.name ?? "My Phone",
+                                        desktop: true
+                                    )
+                                }
+                            } else {
+                                Button("Desktop Mode") {
+                                    ADBConnector.startScrcpy(
+                                        ip: appState.device?.ipAddress ?? "",
+                                        port: appState.adbPort,
+                                        deviceName: appState.device?.name ?? "My Phone",
+                                        desktop: true
+                                    )
+                                }
+                                Button("Native Desktop") {
+                                    appState.isNativeDesktopMirroring = true
+                                }
                             }
                         }
+
                     }
                     
                     

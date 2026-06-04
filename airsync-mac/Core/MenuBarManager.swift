@@ -15,6 +15,7 @@ class MenuBarManager: NSObject {
     private var statusItem: NSStatusItem?
     private var menubarPanel: MenubarPanel?
     private var eventMonitor: Any?
+    private var localEventMonitor: Any?
     private var cancellables = Set<AnyCancellable>()
     private var appState = AppState.shared
     private var temporaryDragLabel: String?
@@ -187,13 +188,21 @@ class MenuBarManager: NSObject {
 
             appState.isMenubarWindowOpen = true
             
-            // Monitor clicks outside to close
+            // Monitor clicks outside to close (both globally and locally within current app)
             eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
                 if let eventLocation = NSEvent.mouseLocation as NSPoint?,
                    let panelFrame = self?.menubarPanel?.frame,
                    !NSMouseInRect(eventLocation, panelFrame, false) {
                     self?.hidePopover()
                 }
+            }
+            localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+                if let eventLocation = NSEvent.mouseLocation as NSPoint?,
+                   let panelFrame = self?.menubarPanel?.frame,
+                   !NSMouseInRect(eventLocation, panelFrame, false) {
+                    self?.hidePopover()
+                }
+                return event
             }
         }
     }
@@ -204,6 +213,10 @@ class MenuBarManager: NSObject {
         if let monitor = eventMonitor {
             NSEvent.removeMonitor(monitor)
             eventMonitor = nil
+        }
+        if let localMonitor = localEventMonitor {
+            NSEvent.removeMonitor(localMonitor)
+            localEventMonitor = nil
         }
     }
 }

@@ -38,6 +38,7 @@ extension UserDefaults {
         static let trialExpiryDate = "trialExpiryDate"
         static let trialDeviceIdentifier = "trialDeviceIdentifier"
         static let trialLastSync = "trialLastSync"
+        static let appSilentNotifications = "appSilentNotifications"
     }
 
     var consecutiveLicenseFailCount: Int {
@@ -188,6 +189,16 @@ extension UserDefaults {
         set { set(newValue, forKey: Keys.trialLastSync) }
     }
     
+    var swapCmdAndCtrl: Bool {
+        get { object(forKey: "swapCmdAndCtrl") == nil ? true : bool(forKey: "swapCmdAndCtrl") }
+        set { set(newValue, forKey: "swapCmdAndCtrl") }
+    }
+
+    var showMirrorControls: Bool {
+        get { object(forKey: "showMirrorControls") == nil ? true : bool(forKey: "showMirrorControls") }
+        set { set(newValue, forKey: "showMirrorControls") }
+    }
+    
     // MARK: - String-based Onboarding Tracking
     
     var lastOnboarding: String? {
@@ -216,6 +227,11 @@ extension UserDefaults {
     
     func resetOnboarding() {
         lastOnboarding = "000"
+    }
+
+    var appSilentNotifications: [String: Bool] {
+        get { dictionary(forKey: Keys.appSilentNotifications) as? [String: Bool] ?? [:] }
+        set { set(newValue, forKey: Keys.appSilentNotifications) }
     }
 }
 

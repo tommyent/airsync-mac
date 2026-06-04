@@ -28,13 +28,10 @@ struct HomeView: View {
                 ZStack {
                     if appState.selectedTab == .settings {
                         SettingsSidebarView()
-                            .transition(.opacity.combined(with: .scale))
                     } else if appState.device == nil {
                         QRScannerSidebarView()
-                            .transition(.opacity.combined(with: .scale))
                     } else {
                         SidebarView()
-                            .transition(.opacity.combined(with: .scale))
                     }
                 }
                 .frame(minWidth: 270)
