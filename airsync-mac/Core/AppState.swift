@@ -319,8 +319,20 @@ class AppState: ObservableObject {
     @Published var adbConnectionMode: ADBConnectionMode? = nil
     
     @Published var recentApps: [AndroidApp] = []
-    @Published var isNativeMirroring: Bool = false
-    @Published var isSidebarMirroring: Bool = false
+    @Published var isNativeMirroring: Bool = false {
+        didSet {
+            if isNativeMirroring && isSidebarMirroring {
+                isSidebarMirroring = false
+            }
+        }
+    }
+    @Published var isSidebarMirroring: Bool = false {
+        didSet {
+            if isSidebarMirroring && isNativeMirroring {
+                isNativeMirroring = false
+            }
+        }
+    }
     @Published var temporaryDragLabel: String? = nil
     
     // MARK: - Centralized Media Seekbar State

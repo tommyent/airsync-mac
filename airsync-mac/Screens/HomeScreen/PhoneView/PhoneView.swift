@@ -63,6 +63,7 @@ struct PhoneView: View {
             .onChange(of: appState.status?.music?.isPlaying) { updateImage() }
             .onChange(of: appState.status?.music?.albumArt) { updateImage() }
             .onChange(of: AppState.shared.currentDeviceWallpaperBase64) { updateImage() }
+            .onChange(of: appState.isSidebarMirroring) { _, _ in updateImage() }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }

@@ -170,7 +170,15 @@ class ScrcpyServerManager: NSObject {
     }
     
     func stopServer() {
-        adbProcess?.terminate()
+        if let process = adbProcess {
+            if let pipe = process.standardOutput as? Pipe {
+                pipe.fileHandleForReading.readabilityHandler = nil
+            }
+            if let pipe = process.standardError as? Pipe {
+                pipe.fileHandleForReading.readabilityHandler = nil
+            }
+            process.terminate()
+        }
         adbProcess = nil
         
         // Remove port forward
@@ -189,6 +197,9 @@ class ScrcpyServerManager: NSObject {
     }
     
     func startMirroringSession(appState: AppState, streamClient: ScrcpyStreamClient, completion: @escaping (Bool, String?) -> Void) {
+        // Stop any current session first to prevent port/process clashes
+        self.stopMirroringSession(streamClient: streamClient)
+        
         let wiredAdbEnabled = appState.wiredAdbEnabled
         let wirelessAddress = "\(appState.adbConnectedIP):\(appState.adbPort)"
         let adbConnected = appState.adbConnected
