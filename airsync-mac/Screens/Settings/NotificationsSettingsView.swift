@@ -87,6 +87,56 @@ struct NotificationsSettingsView: View {
                 }
                 .padding()
                 .glassBoxIfAvailable(radius: 18)
+
+                // 3. Apps
+                headerSection(title: L("settings.notifications.apps"), icon: "app.badge")
+                VStack(spacing: 12) {
+                    let sortedApps = appState.androidApps.values.sorted(by: { $0.name.lowercased() < $1.name.lowercased() })
+                    if sortedApps.isEmpty {
+                        Text("No apps found")
+                            .foregroundColor(.secondary)
+                            .padding(.vertical, 8)
+                    } else {
+                        ForEach(sortedApps, id: \.packageName) { app in
+                            HStack {
+                                if let iconPath = app.iconUrl,
+                                   let image = Image(filePath: iconPath) {
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 24, height: 24)
+                                        .cornerRadius(4)
+                                } else {
+                                    Image(systemName: "app.badge")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 24, height: 24)
+                                        .foregroundColor(.gray)
+                                }
+                                
+                                Text(app.name)
+                                    .font(.body)
+                                
+                                Spacer()
+                                
+                                Toggle("", isOn: Binding(
+                                    get: { app.listening },
+                                    set: { newValue in
+                                        WebSocketServer.shared.toggleNotification(for: app.packageName, to: newValue)
+                                    }
+                                ))
+                                .toggleStyle(.switch)
+                                .labelsHidden()
+                            }
+                            
+                            if app.packageName != sortedApps.last?.packageName {
+                                Divider()
+                            }
+                        }
+                    }
+                }
+                .padding()
+                .glassBoxIfAvailable(radius: 18)
             }
             .padding()
         }
