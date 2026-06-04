@@ -45,8 +45,9 @@ struct MirroringSettingsView: View {
         .onAppear {
             tempBitrate = Double(AppState.shared.scrcpyBitrate)
             tempResolution = Double(AppState.shared.scrcpyResolution)
-            xCoords = UserDefaults.standard.manualPositionCoords[0]
-            yCoords = UserDefaults.standard.manualPositionCoords[1]
+            let coords = UserDefaults.standard.manualPositionCoords
+            xCoords = coords.indices.contains(0) ? coords[0] : "0"
+            yCoords = coords.indices.contains(1) ? coords[1] : "0"
         }
     }
 
@@ -79,8 +80,8 @@ struct MirroringSettingsView: View {
                     Label(L("settings.mirroring.defaultMode"), systemImage: "iphone")
                     Spacer()
                     Picker("", selection: $appState.useNativeMirroringByDefault) {
-                        Label(L("settings.mirroring.scrcpy.title"), systemImage: "macwindow").tag(false)
-                        Label(L("settings.mirroring.native.title"), systemImage: "apps.iphone").tag(true)
+                        Text(L("settings.mirroring.scrcpy.title")).tag(false)
+                        Text(L("settings.mirroring.native.title")).tag(true)
                     }
                     .pickerStyle(.segmented)
                     .controlSize(.large)
@@ -102,8 +103,8 @@ struct MirroringSettingsView: View {
                     Label(L("settings.mirroring.desktop.defaultMode"), systemImage: "desktopcomputer")
                     Spacer()
                     Picker("", selection: $appState.useNativeDesktopMirroringByDefault) {
-                        Label(L("settings.mirroring.scrcpy.title"), systemImage: "macwindow").tag(false)
-                        Label(L("settings.mirroring.native.title"), systemImage: "display").tag(true)
+                        Text(L("settings.mirroring.scrcpy.title")).tag(false)
+                        Text(L("settings.mirroring.native.title")).tag(true)
                     }
                     .pickerStyle(.segmented)
                     .controlSize(.large)
