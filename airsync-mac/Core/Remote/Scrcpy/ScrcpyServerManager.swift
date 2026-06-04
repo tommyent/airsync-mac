@@ -187,4 +187,61 @@ class ScrcpyServerManager: NSObject {
             print("[ScrcpyServerManager] Failed to remove port forward: \(error)")
         }
     }
+    
+    func startMirroringSession(appState: AppState, streamClient: ScrcpyStreamClient, completion: @escaping (Bool, String?) -> Void) {
+        let wiredAdbEnabled = appState.wiredAdbEnabled
+        let wirelessAddress = "\(appState.adbConnectedIP):\(appState.adbPort)"
+        let adbConnected = appState.adbConnected
+        
+        ADBConnector.getWiredDevices { devices in
+            let mappedSerial = appState.selectedWiredSerial ?? (appState.device?.deviceId).flatMap { appState.deviceAdbSerials[$0] }
+            let serialToUse: String?
+            if let mapped = mappedSerial, devices.contains(where: { $0.serial == mapped }) {
+                serialToUse = mapped
+            } else if mappedSerial == nil {
+                serialToUse = devices.first?.serial
+            } else {
+                serialToUse = nil
+            }
+            
+            let finalSerial: String?
+            if wiredAdbEnabled, let serial = serialToUse {
+                finalSerial = serial
+            } else if adbConnected && !appState.adbConnectedIP.isEmpty {
+                finalSerial = wirelessAddress
+            } else {
+                finalSerial = nil
+            }
+            
+            guard let serial = finalSerial else {
+                DispatchQueue.main.async {
+                    completion(false, "No ADB device detected. Please connect your device via USB or Wi-Fi.")
+                }
+                return
+            }
+            
+            self.startServer(serial: serial) { success in
+                guard success else {
+                    DispatchQueue.main.async {
+                        completion(false, "Failed to start scrcpy server on device.")
+                    }
+                    return
+                }
+                DispatchQueue.main.async {
+                    streamClient.onPacketReceived = { data, isConfig, isKeyframe, pts in
+                        ScrcpyVideoDecoder.shared.decodePacket(data: data, isConfig: isConfig, pts: pts)
+                    }
+                    streamClient.connect()
+                    ScrcpyControlClient.shared.connect()
+                    completion(true, nil)
+                }
+            }
+        }
+    }
+    
+    func stopMirroringSession(streamClient: ScrcpyStreamClient) {
+        streamClient.disconnect()
+        ScrcpyControlClient.shared.disconnect()
+        self.stopServer()
+    }
 }

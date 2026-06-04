@@ -11,28 +11,44 @@ struct PhoneView: View {
     @ObservedObject var appState = AppState.shared
     @State private var displayedImage: NSImage?
 
+    private var safeRatio: CGFloat {
+        let width = ScrcpyStreamClient.shared.videoWidth
+        let height = ScrcpyStreamClient.shared.videoHeight
+        if width > 0 && height > 0 {
+            return CGFloat(width) / CGFloat(height)
+        }
+        return 9.0 / 19.5
+    }
+
     var body: some View {
         GeometryReader { geo in
             let cardWidth: CGFloat = 220
-            let cardHeight: CGFloat = 460
+            let cardHeight: CGFloat = appState.isSidebarMirroring ? (cardWidth / safeRatio) : 460
             let corner: CGFloat = 24
             ZStack {
                 // Wallpaper background layer(s) WITH 3D tilt
-                FadingImageView(image: displayedImage, duration: 0.75)
-                    .overlay(
-                        LinearGradient(
-                            colors: [Color.black.opacity(0.35), Color.black.opacity(0.05)],
-                            startPoint: .top, endPoint: .bottom
+                if !appState.isSidebarMirroring {
+                    FadingImageView(image: displayedImage, duration: 0.75)
+                        .overlay(
+                            LinearGradient(
+                                colors: [Color.black.opacity(0.35), Color.black.opacity(0.05)],
+                                startPoint: .top, endPoint: .bottom
+                            )
                         )
-                    )
+                }
 
                 // Seasonal Snowfall Overlay
 //                SnowfallView()
 
                 // Foreground content
-                ScreenView()
-                    .padding(.horizontal, 4)
-                    .transition(.blurReplace)
+                if appState.isSidebarMirroring {
+                    SidebarMirrorView()
+                        .transition(.blurReplace)
+                } else {
+                    ScreenView()
+                        .padding(.horizontal, 4)
+                        .transition(.blurReplace)
+                }
                 
             }
             .frame(width: cardWidth, height: cardHeight)

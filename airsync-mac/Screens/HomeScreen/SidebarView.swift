@@ -46,17 +46,21 @@ struct SidebarView: View {
             if appState.adbConnected {
                 HStack(spacing: 12) {
                     GlassButtonView(
-                        label: "Mirror",
-                        systemImage: "apps.iphone",
+                        label: appState.isSidebarMirroring ? "Close" : "Mirror",
+                        systemImage: appState.isSidebarMirroring ? "xmark.circle" : "apps.iphone",
                         action: {
-                            if appState.useNativeMirroringByDefault {
-                                appState.isNativeMirroring = true
+                            if appState.isSidebarMirroring {
+                                appState.isSidebarMirroring = false
                             } else {
-                                ADBConnector.startScrcpy(
-                                    ip: appState.device?.ipAddress ?? "",
-                                    port: appState.adbPort,
-                                    deviceName: appState.device?.name ?? "My Phone"
-                                )
+                                if appState.useNativeMirroringByDefault {
+                                    appState.isNativeMirroring = true
+                                } else {
+                                    ADBConnector.startScrcpy(
+                                        ip: appState.device?.ipAddress ?? "",
+                                        port: appState.adbPort,
+                                        deviceName: appState.device?.name ?? "My Phone"
+                                    )
+                                }
                             }
                         }
                     )
@@ -66,6 +70,22 @@ struct SidebarView: View {
                         modifiers: .command
                     )
                     .contextMenu {
+                        // 1. Default mirror action
+                        if appState.useNativeMirroringByDefault {
+                            Button("Android Mirror") {
+                                appState.isNativeMirroring = true
+                            }
+                        } else {
+                            Button("scrcpy Mirror") {
+                                ADBConnector.startScrcpy(
+                                    ip: appState.device?.ipAddress ?? "",
+                                    port: appState.adbPort,
+                                    deviceName: appState.device?.name ?? "My Phone"
+                                )
+                            }
+                        }
+                        
+                        // 2. Alternative mirror action
                         if appState.useNativeMirroringByDefault {
                             Button("scrcpy Mirror") {
                                 ADBConnector.startScrcpy(
@@ -87,6 +107,10 @@ struct SidebarView: View {
                                 deviceName: appState.device?.name ?? "My Phone",
                                 desktop: true
                             )
+                        }
+                        
+                        Button(appState.isSidebarMirroring ? "Stop Mirroring Here" : "Mirror Here") {
+                            appState.isSidebarMirroring.toggle()
                         }
                     }
                     .keyboardShortcut(
