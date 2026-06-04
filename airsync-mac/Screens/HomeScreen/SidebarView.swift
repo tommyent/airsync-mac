@@ -65,16 +65,14 @@ struct SidebarView: View {
                         }
                     )
                     .transition(.identity)
-                    .keyboardShortcut(
-                        "p",
-                        modifiers: .command
-                    )
+                    .keyboardShortcut("p", modifiers: [.command])
                     .contextMenu {
                         // 1. Default mirror action
                         if appState.useNativeMirroringByDefault {
                             Button("Android Mirror") {
                                 appState.isNativeMirroring = true
                             }
+                            .keyboardShortcut("p", modifiers: [.command])
                         } else {
                             Button("scrcpy Mirror") {
                                 ADBConnector.startScrcpy(
@@ -83,6 +81,7 @@ struct SidebarView: View {
                                     deviceName: appState.device?.name ?? "My Phone"
                                 )
                             }
+                            .keyboardShortcut("p", modifiers: [.command])
                         }
                         
                         // 2. Alternative mirror action
@@ -94,10 +93,12 @@ struct SidebarView: View {
                                     deviceName: appState.device?.name ?? "My Phone"
                                 )
                             }
+                            .keyboardShortcut("p", modifiers: [.command, .shift])
                         } else {
                             Button("Android Mirror") {
                                 appState.isNativeMirroring = true
                             }
+                            .keyboardShortcut("p", modifiers: [.command, .shift])
                         }
 
                         Button("Desktop Mode") {
@@ -108,15 +109,13 @@ struct SidebarView: View {
                                 desktop: true
                             )
                         }
+                        .keyboardShortcut("d", modifiers: [.command])
                         
                         Button(appState.isSidebarMirroring ? "Stop Mirroring Here" : "Mirror Here") {
                             appState.isSidebarMirroring.toggle()
                         }
+                        .keyboardShortcut("s", modifiers: [.command, .shift])
                     }
-                    .keyboardShortcut(
-                        "d",
-                        modifiers: [.command, .shift]
-                    )
 
                     GlassButtonView(
                         label: "Desktop",
@@ -139,11 +138,14 @@ struct SidebarView: View {
                         }
                     )
                     .transition(.identity)
+                    .keyboardShortcut("d", modifiers: [.command])
                     .contextMenu {
                         if appState.useNativeDesktopMirroringByDefault {
                             Button("Native Desktop") {
                                 appState.isNativeDesktopMirroring = true
                             }
+                            .keyboardShortcut("d", modifiers: [.command])
+                            
                             Button("scrcpy Desktop") {
                                 ADBConnector.startScrcpy(
                                     ip: appState.device?.ipAddress ?? "",
@@ -152,6 +154,7 @@ struct SidebarView: View {
                                     desktop: true
                                 )
                             }
+                            .keyboardShortcut("d", modifiers: [.command, .shift])
                         } else {
                             Button("scrcpy Desktop") {
                                 ADBConnector.startScrcpy(
@@ -161,9 +164,12 @@ struct SidebarView: View {
                                     desktop: true
                                 )
                             }
+                            .keyboardShortcut("d", modifiers: [.command])
+                            
                             Button("Native Desktop") {
                                 appState.isNativeDesktopMirroring = true
                             }
+                            .keyboardShortcut("d", modifiers: [.command, .shift])
                         }
                     }
                     .popover(isPresented: $showingPlusDesktopPopover, arrowEdge: .top) {
