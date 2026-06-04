@@ -104,6 +104,7 @@ class AppState: ObservableObject {
 
         self.useADBWhenPossible = UserDefaults.standard.object(forKey: "useADBWhenPossible") == nil ? true : UserDefaults.standard.bool(forKey: "useADBWhenPossible")
         self.useNativeMirroringByDefault = UserDefaults.standard.bool(forKey: "useNativeMirroringByDefault")
+        self.useNativeDesktopMirroringByDefault = UserDefaults.standard.bool(forKey: "useNativeDesktopMirroringByDefault")
         self.isMusicCardHidden = UserDefaults.standard.bool(forKey: "isMusicCardHidden")
         
         self.isCrashReportingEnabled = UserDefaults.standard.object(forKey: "isCrashReportingEnabled") == nil ? true : UserDefaults.standard.bool(forKey: "isCrashReportingEnabled")
@@ -173,6 +174,7 @@ class AppState: ObservableObject {
 
         // Reset mirroring state on launch to prevent auto-opening if it was open during last session
         self.isNativeMirroring = false
+        self.isNativeDesktopMirroring = false
         
         startMediaTimer()
 
@@ -321,15 +323,25 @@ class AppState: ObservableObject {
     @Published var recentApps: [AndroidApp] = []
     @Published var isNativeMirroring: Bool = false {
         didSet {
-            if isNativeMirroring && isSidebarMirroring {
-                isSidebarMirroring = false
+            if isNativeMirroring {
+                if isSidebarMirroring { isSidebarMirroring = false }
+                if isNativeDesktopMirroring { isNativeDesktopMirroring = false }
             }
         }
     }
     @Published var isSidebarMirroring: Bool = false {
         didSet {
-            if isSidebarMirroring && isNativeMirroring {
-                isNativeMirroring = false
+            if isSidebarMirroring {
+                if isNativeMirroring { isNativeMirroring = false }
+                if isNativeDesktopMirroring { isNativeDesktopMirroring = false }
+            }
+        }
+    }
+    @Published var isNativeDesktopMirroring: Bool = false {
+        didSet {
+            if isNativeDesktopMirroring {
+                if isNativeMirroring { isNativeMirroring = false }
+                if isSidebarMirroring { isSidebarMirroring = false }
             }
         }
     }
@@ -666,6 +678,12 @@ class AppState: ObservableObject {
     @Published var useNativeMirroringByDefault: Bool {
         didSet {
             UserDefaults.standard.set(useNativeMirroringByDefault, forKey: "useNativeMirroringByDefault")
+        }
+    }
+
+    @Published var useNativeDesktopMirroringByDefault: Bool {
+        didSet {
+            UserDefaults.standard.set(useNativeDesktopMirroringByDefault, forKey: "useNativeDesktopMirroringByDefault")
         }
     }
 

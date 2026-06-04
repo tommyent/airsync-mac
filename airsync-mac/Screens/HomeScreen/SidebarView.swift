@@ -123,22 +123,54 @@ struct SidebarView: View {
                         systemImage: "desktopcomputer",
                         action: {
                             if appState.isPlus && appState.licenseCheck {
-                                ADBConnector.startScrcpy(
-                                    ip: appState.device?.ipAddress ?? "",
-                                    port: appState.adbPort,
-                                    deviceName: appState.device?.name ?? "My Phone",
-                                    desktop: true
-                                )
+                                if appState.useNativeDesktopMirroringByDefault {
+                                    appState.isNativeDesktopMirroring = true
+                                } else {
+                                    ADBConnector.startScrcpy(
+                                        ip: appState.device?.ipAddress ?? "",
+                                        port: appState.adbPort,
+                                        deviceName: appState.device?.name ?? "My Phone",
+                                        desktop: true
+                                    )
+                                }
                             } else {
                                 showingPlusDesktopPopover = true
                             }
                         }
                     )
                     .transition(.identity)
+                    .contextMenu {
+                        if appState.useNativeDesktopMirroringByDefault {
+                            Button("Native Desktop") {
+                                appState.isNativeDesktopMirroring = true
+                            }
+                            Button("scrcpy Desktop") {
+                                ADBConnector.startScrcpy(
+                                    ip: appState.device?.ipAddress ?? "",
+                                    port: appState.adbPort,
+                                    deviceName: appState.device?.name ?? "My Phone",
+                                    desktop: true
+                                )
+                            }
+                        } else {
+                            Button("scrcpy Desktop") {
+                                ADBConnector.startScrcpy(
+                                    ip: appState.device?.ipAddress ?? "",
+                                    port: appState.adbPort,
+                                    deviceName: appState.device?.name ?? "My Phone",
+                                    desktop: true
+                                )
+                            }
+                            Button("Native Desktop") {
+                                appState.isNativeDesktopMirroring = true
+                            }
+                        }
+                    }
                     .popover(isPresented: $showingPlusDesktopPopover, arrowEdge: .top) {
                         PlusFeaturePopover(message: "Desktop Mode is an AirSync+ feature")
                     }
                     .whatsNewPopover(item: .desktopMode, arrowEdge: .top)
+
                 }
                 .padding(.top, 8)
                 .padding(.bottom, 12)

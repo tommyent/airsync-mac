@@ -16,7 +16,7 @@ class ScrcpyServerManager: NSObject {
     
     private var adbProcess: Process?
     
-    func startServer(serial: String, completion: @escaping (Bool) -> Void) {
+    func startServer(serial: String, desktopMode: Bool = false, completion: @escaping (Bool) -> Void) {
         let adbPath = ADBConnector.findExecutable(named: "adb", fallbackPaths: ADBConnector.possibleADBPaths) ?? "/opt/homebrew/bin/adb"
         
         // Step 0: Cleanup previous instances and port forwards
@@ -51,7 +51,7 @@ class ScrcpyServerManager: NSObject {
                 }
                 
                 // Step 3: Launch server
-                self.launchServer(serial: serial, completion: completion)
+                self.launchServer(serial: serial, desktopMode: desktopMode, completion: completion)
             }
         }
     }
@@ -93,21 +93,36 @@ class ScrcpyServerManager: NSObject {
     private var launchCompletion: ((Bool) -> Void)?
     private var launchTimer: Timer?
     
-    func launchServer(serial: String, completion: @escaping (Bool) -> Void) {
+    func launchServer(serial: String, desktopMode: Bool = false, completion: @escaping (Bool) -> Void) {
         let adbPath = ADBConnector.findExecutable(named: "adb", fallbackPaths: ADBConnector.possibleADBPaths) ?? "/opt/homebrew/bin/adb"
         
         let process = Process()
         process.executableURL = URL(fileURLWithPath: adbPath)
         
-        // Explicitly include video=true and bit_rate/max_size
+        var serverArgs = [
+            "tunnel_forward=true", "audio=false", "video=true", "control=true",
+            "video_codec=h265", "video_bit_rate=8000000"
+        ]
+        
+        if desktopMode {
+            // Virtual display — new_display requires "WxH" or "WxH/DPI" format
+            let dpi = UserDefaults.standard.scrcpyDesktopDpi
+            if !dpi.isEmpty {
+                serverArgs.append("new_display=1920x1080/\(dpi)")
+            } else {
+                serverArgs.append("new_display=1920x1080")
+            }
+            serverArgs.append("flex_display=true")
+        } else {
+            serverArgs.append("max_size=1440")
+        }
+        
         process.arguments = [
             "-s", serial,
             "shell",
             "CLASSPATH=\(serverRemotePath)",
-            "app_process", "/", "com.genymobile.scrcpy.Server", "4.0",
-            "tunnel_forward=true", "audio=false", "video=true", "control=true",
-            "video_codec=h265", "video_bit_rate=8000000", "max_size=1440"
-        ]
+            "app_process", "/", "com.genymobile.scrcpy.Server", "4.0"
+        ] + serverArgs
         
         self.adbProcess = process
         self.launchCompletion = completion
@@ -125,8 +140,8 @@ class ScrcpyServerManager: NSObject {
                     guard !trimmed.isEmpty else { continue }
                     print("[scrcpy-server] \(trimmed)")
                     
-                    // Detect readiness: "[server] INFO: Video size: ..."
-                    if trimmed.contains("INFO: Video size:") {
+                    // Detect readiness: "[server] INFO: Video size: ..." or "[server] INFO: New display: ..."
+                    if trimmed.contains("INFO: Video size:") || trimmed.contains("INFO: New display:") {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                             self?.launchTimer?.invalidate()
                             self?.launchTimer = nil
@@ -196,7 +211,7 @@ class ScrcpyServerManager: NSObject {
         }
     }
     
-    func startMirroringSession(appState: AppState, streamClient: ScrcpyStreamClient, completion: @escaping (Bool, String?) -> Void) {
+    func startMirroringSession(appState: AppState, streamClient: ScrcpyStreamClient, desktopMode: Bool = false, completion: @escaping (Bool, String?) -> Void) {
         // Stop any current session first to prevent port/process clashes
         self.stopMirroringSession(streamClient: streamClient)
         
@@ -231,7 +246,7 @@ class ScrcpyServerManager: NSObject {
                 return
             }
             
-            self.startServer(serial: serial) { success in
+            self.startServer(serial: serial, desktopMode: desktopMode) { success in
                 guard success else {
                     DispatchQueue.main.async {
                         completion(false, "Failed to start scrcpy server on device.")

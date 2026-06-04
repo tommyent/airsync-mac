@@ -95,8 +95,29 @@ struct MirroringSettingsView: View {
                     Text(L("settings.mirroring.scrcpy.info"))
                         .font(.caption)
                 }
+
+                Divider()
+
+                HStack{
+                    Label("Desktop Mode Default", systemImage: "desktopcomputer")
+                    Spacer()
+                    Picker("", selection: $appState.useNativeDesktopMirroringByDefault) {
+                        Label("scrcpy", systemImage: "macwindow").tag(false)
+                        Label("Native", systemImage: "display").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .controlSize(.large)
+                }
+
+                Spacer(minLength: 4)
+
+                Text(appState.useNativeDesktopMirroringByDefault
+                     ? "Uses the built-in stream for desktop mode — no scrcpy binary required."
+                     : "Launches desktop mode via the scrcpy binary.")
+                    .font(.caption)
             }
             .padding()
+
             
             androidMirroringSection
 
