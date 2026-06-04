@@ -145,6 +145,12 @@ struct airsync_macApp: App {
                 CheckForUpdatesView(updater: updaterController.updater)
             }
             CommandGroup(replacing: .newItem) { }
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings...") {
+                    AppState.shared.selectedTab = .settings
+                }
+                .keyboardShortcut(",")
+            }
             CommandGroup(replacing: .help) {
                 Button(action: {
                     if let url = URL(string: "https://airsync.notion.site") {

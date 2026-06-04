@@ -85,12 +85,13 @@ struct DeviceCard: View {
                     Spacer()
                     
                     GlassButtonView(
-                        label: "Connect",
+                        label: isLastConnected ? "\(L("button.connect")) ⌘⏎" : L("button.connect"),
                         systemImage: "bolt.circle.fill",
                         primary: device.isActive,
                         isLoading: isLoading,
                         action: connectAction
                     )
+                    .conditionalKeyboardShortcut(isEnabled: isLastConnected)
                     .frame(maxWidth: .infinity)
                     
                     if !device.isActive {
@@ -142,5 +143,22 @@ struct DeviceCard: View {
                 self.wallpaperImage = nil
             }
         }
+    }
+}
+
+fileprivate struct KeyboardShortcutModifier: ViewModifier {
+    var isEnabled: Bool
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content.keyboardShortcut(.return, modifiers: .command)
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    fileprivate func conditionalKeyboardShortcut(isEnabled: Bool) -> some View {
+        self.modifier(KeyboardShortcutModifier(isEnabled: isEnabled))
     }
 }

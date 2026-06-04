@@ -24,6 +24,7 @@ struct AppContentView: View {
                         //                    Label("Scan", systemImage: "qrcode")
                     }
                     .tag(TabIdentifier.qr)
+                    .help(L("qr.tab"))
                     .toolbar {
                         ToolbarItemGroup {
                             Button("Help", systemImage: "questionmark.circle") {
@@ -51,6 +52,7 @@ struct AppContentView: View {
                         //                        Label("Notifications", systemImage: "bell.badge")
                     }
                     .tag(TabIdentifier.notifications)
+                    .help("\(L("notifications.tab")) (⌘N)")
                     .toolbar {
                         if appState.notifications.count > 0 || appState.callEvents.count > 0 {
                             ToolbarItem(placement: .primaryAction) {
@@ -81,6 +83,7 @@ struct AppContentView: View {
                         //                        Label("Apps", systemImage: "app")
                     }
                     .tag(TabIdentifier.apps)
+                    .help("\(L("apps.tab")) (⌘A)")
 
             }
 
@@ -91,6 +94,7 @@ struct AppContentView: View {
                     Image(systemName: "gear")
                 }
                 .tag(TabIdentifier.settings)
+                .help("\(L("settings.tab")) (⌘,)")
                 .toolbar {
                     ToolbarItemGroup {
                         Button("Help", systemImage: "questionmark.circle") {
@@ -118,6 +122,27 @@ struct AppContentView: View {
                     }
                 }
         }
+        .background(
+            Group {
+                Button("") {
+                    if appState.device != nil {
+                        appState.selectedTab = .notifications
+                    }
+                }
+                .keyboardShortcut("n", modifiers: [.command])
+                .opacity(0)
+                .allowsHitTesting(false)
+
+                Button("") {
+                    if appState.device != nil {
+                        appState.selectedTab = .apps
+                    }
+                }
+                .keyboardShortcut("a", modifiers: [.command])
+                .opacity(0)
+                .allowsHitTesting(false)
+            }
+        )
         .tabViewStyle(.automatic)
         .frame(minWidth: 550, minHeight: 510)
         .onAppear {
