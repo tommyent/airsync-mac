@@ -230,7 +230,10 @@ class AppState: ObservableObject {
     @Published var activeMacIp: String? = nil
     @Published var callEvents: [CallEvent] = []
     private var callDurationTimer: AnyCancellable?
-    @Published var activeCallDurationSec: Int = 0
+    var activeCallDurationSec: Int {
+        get { PlaybackState.shared.activeCallDurationSec }
+        set { PlaybackState.shared.activeCallDurationSec = newValue }
+    }
 
     @Published var activeCall: CallEvent? = nil {
         didSet {
@@ -311,7 +314,10 @@ class AppState: ObservableObject {
     @Published var temporaryDragLabel: String? = nil
     
     // MARK: - Centralized Media Seekbar State
-    @Published var mediaPosition: Double = 0
+    var mediaPosition: Double {
+        get { PlaybackState.shared.mediaPosition }
+        set { PlaybackState.shared.mediaPosition = newValue }
+    }
     var isDraggingMedia: Bool = false
     var lastMediaSeekTime: Date = .distantPast
     var seekTargetPosition: Double = -1

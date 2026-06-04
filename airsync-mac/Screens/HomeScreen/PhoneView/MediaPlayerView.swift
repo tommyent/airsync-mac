@@ -16,10 +16,11 @@ private struct MediaSeekbarView: View {
     @ObservedObject var appState = AppState.shared
 
     var body: some View {
+        @Bindable var playbackState = PlaybackState.shared
         VStack(spacing: 2) {
             // Slider
             Slider(
-                value: $appState.mediaPosition,
+                value: $playbackState.mediaPosition,
                 in: 0...max(music.duration, 1),
                 onEditingChanged: { editing in
                     appState.isDraggingMedia = editing
@@ -27,13 +28,13 @@ private struct MediaSeekbarView: View {
                         NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
                     } else {
                         NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .default)
-                        appState.handleMediaSeek(to: appState.mediaPosition)
+                        appState.handleMediaSeek(to: playbackState.mediaPosition)
                     }
                 }
             )
             .accentColor(.primary)
             .padding(.horizontal, 2)
-            .onChange(of: appState.mediaPosition) { oldValue, newValue in
+            .onChange(of: playbackState.mediaPosition) { oldValue, newValue in
                 guard appState.isDraggingMedia else { return }
                 let tickInterval: Double = 1.0
                 let lastTick = floor(oldValue / tickInterval) * tickInterval
@@ -45,7 +46,7 @@ private struct MediaSeekbarView: View {
 
             // Time labels
             HStack {
-                Text(formatTime(appState.mediaPosition))
+                Text(formatTime(playbackState.mediaPosition))
                 Spacer()
                 Text(formatTime(music.duration))
             }
