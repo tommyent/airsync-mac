@@ -1135,9 +1135,8 @@ class AppState: ObservableObject {
                     self.notifications.insert(notif, at: 0)
                 }
             }
-            // Trigger native macOS notification if not silent and content actually changed/new
-            // Default to alerting if priority is missing (backwards compatibility)
-            if notif.priority != "silent" && contentChanged {
+            let isAppSilentOnMac = UserDefaults.standard.appSilentNotifications[notif.package] ?? false
+            if notif.priority != "silent" && !isAppSilentOnMac && contentChanged {
                 var appIcon: NSImage? = nil
                 if let iconPath = self.androidApps[notif.package]?.iconUrl {
                     appIcon = NSImage(contentsOfFile: iconPath)

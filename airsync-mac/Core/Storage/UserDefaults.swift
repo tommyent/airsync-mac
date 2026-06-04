@@ -38,6 +38,7 @@ extension UserDefaults {
         static let trialExpiryDate = "trialExpiryDate"
         static let trialDeviceIdentifier = "trialDeviceIdentifier"
         static let trialLastSync = "trialLastSync"
+        static let appSilentNotifications = "appSilentNotifications"
     }
 
     var consecutiveLicenseFailCount: Int {
@@ -226,6 +227,11 @@ extension UserDefaults {
     
     func resetOnboarding() {
         lastOnboarding = "000"
+    }
+
+    var appSilentNotifications: [String: Bool] {
+        get { dictionary(forKey: Keys.appSilentNotifications) as? [String: Bool] ?? [:] }
+        set { set(newValue, forKey: Keys.appSilentNotifications) }
     }
 }
 

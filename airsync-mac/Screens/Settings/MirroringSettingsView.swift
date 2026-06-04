@@ -74,9 +74,9 @@ struct MirroringSettingsView: View {
 
     private var unlockedMirroringViewContent: some View {
         VStack(alignment: .leading, spacing: 20) {
-            VStack{
+            VStack(spacing: 16) {
                 HStack{
-                    Label(L("settings.mirroring.defaultMode"), systemImage: "rectangle.on.rectangle.badge.gearshape")
+                    Label(L("settings.mirroring.defaultMode"), systemImage: "iphone")
                     Spacer()
                     Picker("", selection: $appState.useNativeMirroringByDefault) {
                         Label(L("settings.mirroring.scrcpy.title"), systemImage: "macwindow").tag(false)
@@ -86,8 +86,6 @@ struct MirroringSettingsView: View {
                     .controlSize(.large)
                 }
 
-                Spacer(minLength: 8)
-
                 if(appState.useNativeMirroringByDefault) {
                     Text(L("settings.mirroring.native.info"))
                         .font(.caption)
@@ -95,21 +93,21 @@ struct MirroringSettingsView: View {
                     Text(L("settings.mirroring.scrcpy.info"))
                         .font(.caption)
                 }
+            }
+            .padding()
+            .glassBoxIfAvailable(radius: 18)
 
-                Divider()
-
+            VStack(spacing: 16) {
                 HStack{
-                    Label("Desktop Mode Default", systemImage: "desktopcomputer")
+                    Label(L("settings.mirroring.desktop.defaultMode"), systemImage: "desktopcomputer")
                     Spacer()
                     Picker("", selection: $appState.useNativeDesktopMirroringByDefault) {
-                        Label("scrcpy", systemImage: "macwindow").tag(false)
-                        Label("Native", systemImage: "display").tag(true)
+                        Label(L("settings.mirroring.scrcpy.title"), systemImage: "macwindow").tag(false)
+                        Label(L("settings.mirroring.native.title"), systemImage: "display").tag(true)
                     }
                     .pickerStyle(.segmented)
                     .controlSize(.large)
                 }
-
-                Spacer(minLength: 4)
 
                 Text(appState.useNativeDesktopMirroringByDefault
                      ? "Uses the built-in stream for desktop mode — no scrcpy binary required."
@@ -117,6 +115,7 @@ struct MirroringSettingsView: View {
                     .font(.caption)
             }
             .padding()
+            .glassBoxIfAvailable(radius: 18)
 
             
             androidMirroringSection

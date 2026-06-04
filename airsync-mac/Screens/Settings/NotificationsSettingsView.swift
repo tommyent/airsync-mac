@@ -90,7 +90,7 @@ struct NotificationsSettingsView: View {
                 .glassBoxIfAvailable(radius: 18)
 
                 // 3. Apps
-                headerSection(title: L("settings.notifications.apps"), icon: "app.badge")
+                headerSection(title: L("settings.notifications.app.title"), icon: "app.badge")
                 VStack(spacing: 12) {
                     if appState.device == nil {
                         Text(L("settings.notifications.apps.connect"))
