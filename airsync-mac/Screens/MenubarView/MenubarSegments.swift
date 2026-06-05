@@ -272,12 +272,12 @@ struct NotificationsSegmentView: View {
                     MenubarSummaryCardView(viewModel: summaryViewModel)
                         .padding(6)
                         .segmentStyle()
-                        .modifier(AIGlowModifier(isGenerating: summaryViewModel.isGeneratingMenubarSummary, cornerRadius: 20))
+                        .modifier(AIGlowModifier(isGenerating: summaryViewModel.isGeneratingSummary, cornerRadius: 20))
                         .onAppear {
-                            summaryViewModel.generateMenubarSummaryIfNeeded(notifications: appState.notifications, androidApps: appState.androidApps)
+                            summaryViewModel.generateSummary(notifications: appState.notifications, androidApps: appState.androidApps)
                         }
                         .onChange(of: appState.notifications) { _, newNotifications in
-                            summaryViewModel.generateMenubarSummaryIfNeeded(notifications: newNotifications, androidApps: appState.androidApps)
+                            summaryViewModel.generateSummary(notifications: newNotifications, androidApps: appState.androidApps)
                         }
                 }
 

@@ -47,7 +47,7 @@ struct NotificationView: View {
                 if !appState.disableAllAIFeatures && appState.showAIToolbarButton && hasValidNotifications {
                     ToolbarItem(placement: .primaryAction) {
                         Button {
-                            summaryViewModel.generateSummary(notifications: appState.notifications, androidApps: appState.androidApps)
+                            summaryViewModel.generateSummary(notifications: appState.notifications, androidApps: appState.androidApps, isFromToolbar: true)
                         } label: {
                             Label("Summarize", systemImage: "sparkles")
                         }

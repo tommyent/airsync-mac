@@ -22,20 +22,36 @@ class NotificationSummaryViewModel: ObservableObject {
     @Published var isGeneratingSummary: Bool = false
     @Published var showSummary: Bool = false
     
-    @Published var menubarSummaryText: String = ""
-    @Published var isGeneratingMenubarSummary: Bool = false
+    private var lastGeneratedTime: Date?
+    private var lastNotificationsHash: String = ""
     
-    private var lastMenubarGeneratedTime: Date?
-    private var lastMenubarNotificationsHash: String = ""
-    
-    func generateSummary(notifications: [Notification], androidApps: [String: AndroidApp]) {
+    func generateSummary(notifications: [Notification], androidApps: [String: AndroidApp], isFromToolbar: Bool = false) {
         let filtered = AppState.shared.includeSilentInAIOption ? notifications : notifications.filter { $0.priority != "silent" }
         guard !filtered.isEmpty else { return }
-        isGeneratingSummary = true
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-            showSummary = true
+        
+        if isFromToolbar {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                showSummary = true
+            }
         }
-        summaryText = ""
+        
+        let currentHash = filtered.map { "\($0.id)-\($0.title)-\($0.body)" }.joined(separator: "|")
+        let now = Date()
+        
+        if let lastTime = lastGeneratedTime {
+            let elapsed = now.timeIntervalSince(lastTime)
+            if elapsed >= 120.0 && currentHash != lastNotificationsHash {
+                performGeneration(filtered: filtered, androidApps: androidApps, hash: currentHash, now: now)
+            }
+        } else {
+            performGeneration(filtered: filtered, androidApps: androidApps, hash: currentHash, now: now)
+        }
+    }
+    
+    private func performGeneration(filtered: [Notification], androidApps: [String: AndroidApp], hash: String, now: Date) {
+        isGeneratingSummary = true
+        lastGeneratedTime = now
+        lastNotificationsHash = hash
         
         var notificationsText = ""
         let grouped = Dictionary(grouping: filtered) { notif in
@@ -80,86 +96,16 @@ class NotificationSummaryViewModel: ObservableObject {
         }
     }
     
-    func generateMenubarSummaryIfNeeded(notifications: [Notification], androidApps: [String: AndroidApp]) {
-        let filtered = AppState.shared.includeSilentInAIOption ? notifications : notifications.filter { $0.priority != "silent" }
-        guard filtered.count >= 3 else { return }
-        
-        let currentHash = filtered.map { "\($0.id)-\($0.title)-\($0.body)" }.joined(separator: "|")
-        let now = Date()
-        
-        if let lastTime = lastMenubarGeneratedTime {
-            let elapsed = now.timeIntervalSince(lastTime)
-            if elapsed >= 60.0 && currentHash != lastMenubarNotificationsHash {
-                performMenubarGeneration(filtered: filtered, androidApps: androidApps, hash: currentHash, now: now)
-            }
-        } else {
-            performMenubarGeneration(filtered: filtered, androidApps: androidApps, hash: currentHash, now: now)
-        }
-    }
-    
-    private func performMenubarGeneration(filtered: [Notification], androidApps: [String: AndroidApp], hash: String, now: Date) {
-        isGeneratingMenubarSummary = true
-        lastMenubarGeneratedTime = now
-        lastMenubarNotificationsHash = hash
-        
-        var notificationsText = ""
-        let grouped = Dictionary(grouping: filtered) { notif in
-            androidApps[notif.package]?.name ?? "Android Device"
-        }
-        
-        for (appName, notifs) in grouped {
-            notificationsText += "\n[\(appName)]:\n"
-            for notif in notifs {
-                let title = notif.title
-                let body = notif.body
-                notificationsText += "- \(title): \(body)\n"
-            }
-        }
-        
-        let prompt = """
-        Please provide a concise, high-level summary of the following notifications from my phone:
-        \(notificationsText)
-        Group them logically and highlight important alerts or action items.
-        """
-        
-        Task {
-            do {
-                if #available(macOS 26.0, *) {
-                    let session = LanguageModelSession(instructions: "You are an assistant that summarizes phone notifications. Write an extremely brief summary of active notifications. Group them by category using simple headers starting with '##' (e.g. '## Important Alerts') followed by brief lines. Do not mention specific app names. Never use conversational filler, keep it to 2-3 items max.")
-                    let response = try await session.respond(to: prompt)
-                    let cleaned = response.content.replacingOccurrences(of: "\r\n", with: "\n")
-                    await animateWritingMenubarText(cleaned)
-                } else {
-                    await MainActor.run {
-                        menubarSummaryText = "AI summaries require macOS 26.0 or later."
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    menubarSummaryText = "Error generating response: \(error.localizedDescription)"
-                }
-            }
-            await MainActor.run {
-                isGeneratingMenubarSummary = false
-            }
-        }
-    }
-    
     @MainActor
     private func animateWritingText(_ fullText: String) async {
         summaryText = ""
-        for char in fullText {
-            summaryText.append(char)
-            try? await Task.sleep(nanoseconds: 15_000_000) // 15ms per character
-        }
-    }
-    
-    @MainActor
-    private func animateWritingMenubarText(_ fullText: String) async {
-        menubarSummaryText = ""
-        for char in fullText {
-            menubarSummaryText.append(char)
-            try? await Task.sleep(nanoseconds: 15_000_000) // 15ms per character
+        var currentIndex = fullText.startIndex
+        while currentIndex < fullText.endIndex {
+            let nextIndex = fullText.index(currentIndex, offsetBy: 3, limitedBy: fullText.endIndex) ?? fullText.endIndex
+            let chunk = fullText[currentIndex..<nextIndex]
+            summaryText.append(contentsOf: chunk)
+            currentIndex = nextIndex
+            try? await Task.sleep(nanoseconds: 10_000_000) // 10ms sleep
         }
     }
 }
@@ -254,7 +200,7 @@ struct MenubarSummaryCardView: View {
                 Spacer()
             }
             
-            if viewModel.isGeneratingMenubarSummary && viewModel.menubarSummaryText.isEmpty {
+            if viewModel.isGeneratingSummary && viewModel.summaryText.isEmpty {
                 HStack(spacing: 8) {
                     ProgressView()
                         .controlSize(.small)
@@ -265,7 +211,7 @@ struct MenubarSummaryCardView: View {
                 .padding(.vertical, 4)
             } else {
                 VStack(alignment: .leading, spacing: 2) {
-                    let lines: [SummaryLine] = viewModel.menubarSummaryText.components(separatedBy: "\n")
+                    let lines: [SummaryLine] = viewModel.summaryText.components(separatedBy: "\n")
                         .map { line -> SummaryLine in
                             let trimmed = line.trimmingCharacters(in: .whitespaces)
                             if trimmed.hasPrefix("#") {
@@ -275,6 +221,7 @@ struct MenubarSummaryCardView: View {
                                 let clean = trimmed
                                     .replacingOccurrences(of: "^[\\*\\-\\•]\\s*", with: "", options: .regularExpression)
                                     .replacingOccurrences(of: "\\*", with: "")
+                                    .trimmingCharacters(in: .whitespaces)
                                 return SummaryLine(text: clean, isHeader: false)
                             }
                         }
