@@ -21,7 +21,8 @@ class NotificationSummaryViewModel: ObservableObject {
     @Published var showSummary: Bool = false
     
     func generateSummary(notifications: [Notification], androidApps: [String: AndroidApp]) {
-        guard !notifications.isEmpty else { return }
+        let filtered = AppState.shared.includeSilentInAIOption ? notifications : notifications.filter { $0.priority != "silent" }
+        guard !filtered.isEmpty else { return }
         isGeneratingSummary = true
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             showSummary = true
@@ -29,7 +30,7 @@ class NotificationSummaryViewModel: ObservableObject {
         summaryText = ""
         
         var notificationsText = ""
-        let grouped = Dictionary(grouping: notifications) { notif in
+        let grouped = Dictionary(grouping: filtered) { notif in
             androidApps[notif.package]?.name ?? "Android Device"
         }
         

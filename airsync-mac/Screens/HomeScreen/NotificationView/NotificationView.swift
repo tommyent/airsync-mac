@@ -43,7 +43,8 @@ struct NotificationView: View {
             }
             .whatsNewPopover(item: .firstNotification, arrowEdge: .top)
             .toolbar {
-                if !appState.disableAllAIFeatures && appState.showAIToolbarButton {
+                let hasValidNotifications = appState.includeSilentInAIOption ? !appState.notifications.isEmpty : appState.notifications.contains(where: { $0.priority != "silent" })
+                if !appState.disableAllAIFeatures && appState.showAIToolbarButton && hasValidNotifications {
                     ToolbarItem(placement: .primaryAction) {
                         Button {
                             summaryViewModel.generateSummary(notifications: appState.notifications, androidApps: appState.androidApps)

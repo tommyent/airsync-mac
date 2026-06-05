@@ -13,29 +13,56 @@ struct AppleIntelligenceSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // Section 1: Disable AI
-                headerSection(title: L("settings.appleIntelligence"), icon: "sparkles")
-                VStack {
-                    SettingsToggleView(
-                        name: L("settings.notifications.ai.disableAll"),
-                        icon: "sparkles.slash",
-                        isOn: $appState.disableAllAIFeatures
-                    )
-                }
-                .padding()
-                .glassBoxIfAvailable(radius: 18)
-                
-                // Section 2: Notification summaries
-                if !appState.disableAllAIFeatures {
-                    headerSection(title: "Notification summaries", icon: "doc.text.magnifyingglass")
+                if #available(macOS 26.0, *) {
+                    // Section 1: Disable AI
+                    headerSection(title: L("settings.appleIntelligence"), icon: "sparkles")
                     VStack {
                         SettingsToggleView(
-                            name: L("settings.notifications.ai.showToolbarButton"),
-                            icon: "sparkles",
-                            isOn: $appState.showAIToolbarButton
+                            name: L("settings.notifications.ai.disableAll"),
+                            icon: "sparkles.slash",
+                            isOn: $appState.disableAllAIFeatures
                         )
                     }
                     .padding()
+                    .glassBoxIfAvailable(radius: 18)
+                    
+                    // Section 2: Notification summaries
+                    if !appState.disableAllAIFeatures {
+                        headerSection(title: "Notification summaries", icon: "doc.text.magnifyingglass")
+                        VStack(spacing: 12) {
+                            SettingsToggleView(
+                                name: L("settings.notifications.ai.showToolbarButton"),
+                                icon: "sparkles",
+                                isOn: $appState.showAIToolbarButton
+                            )
+                            
+                            SettingsToggleView(
+                                name: L("settings.notifications.ai.includeSilent"),
+                                icon: "bell.slash",
+                                isOn: $appState.includeSilentInAIOption
+                            )
+                        }
+                        .padding()
+                        .glassBoxIfAvailable(radius: 18)
+                    }
+                } else {
+                    // Unavailable view
+                    headerSection(title: L("settings.notifications.ai.unavailable.title"), icon: "exclamationmark.triangle")
+                    VStack(alignment: .center, spacing: 16) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 36))
+                            .foregroundColor(.orange)
+                        
+                        Text(L("settings.notifications.ai.unavailable.title"))
+                            .font(.headline)
+                        
+                        Text(L("settings.notifications.ai.unavailable.body"))
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity)
                     .glassBoxIfAvailable(radius: 18)
                 }
             }
