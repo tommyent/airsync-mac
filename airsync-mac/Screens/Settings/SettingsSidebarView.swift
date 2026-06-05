@@ -56,9 +56,7 @@ struct SettingsSidebarView: View {
         let isHovered = hoveredTab == tab
 
         Button {
-            withAnimation(.easeInOut(duration: 0.15)) {
-                appState.selectedSettingsTab = tab
-            }
+            appState.selectedSettingsTab = tab
         } label: {
             HStack(spacing: 12) {
                 // Circular icon badge

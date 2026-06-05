@@ -269,11 +269,10 @@ struct MirroringSettingsView: View {
 
     private var lockedMirroringViewContent: some View {
         VStack(spacing: 20) {
-            Spacer()
-
             Image(systemName: "apps.iphone.badge.plus")
                 .font(.system(size: 64))
                 .foregroundStyle(Color.accentColor)
+                .padding(.top, 40)
                 .padding(.bottom, 10)
 
             PlusFeaturePopover(message: L("settings.mirroring.plusFeatureMessage"))
@@ -283,9 +282,9 @@ struct MirroringSettingsView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
                 )
-
-            Spacer()
+                .padding(.bottom, 40)
         }
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
