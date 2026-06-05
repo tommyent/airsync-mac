@@ -31,7 +31,10 @@ class NotificationSummaryViewModel: ObservableObject {
         
         if isFromToolbar {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                showSummary = true
+                showSummary.toggle()
+            }
+            if !showSummary {
+                return
             }
         }
         
@@ -99,13 +102,13 @@ class NotificationSummaryViewModel: ObservableObject {
     @MainActor
     private func animateWritingText(_ fullText: String) async {
         summaryText = ""
-        var currentIndex = fullText.startIndex
-        while currentIndex < fullText.endIndex {
-            let nextIndex = fullText.index(currentIndex, offsetBy: 3, limitedBy: fullText.endIndex) ?? fullText.endIndex
-            let chunk = fullText[currentIndex..<nextIndex]
-            summaryText.append(contentsOf: chunk)
-            currentIndex = nextIndex
-            try? await Task.sleep(nanoseconds: 10_000_000) // 10ms sleep
+        let lines = fullText.components(separatedBy: "\n")
+        for (index, line) in lines.enumerated() {
+            let suffix = index == lines.count - 1 ? "" : "\n"
+            withAnimation(.easeOut(duration: 0.35)) {
+                summaryText.append(line + suffix)
+            }
+            try? await Task.sleep(nanoseconds: 200_000_000) // 200ms delay between lines
         }
     }
 }
@@ -263,7 +266,7 @@ struct AIGlowModifier: ViewModifier {
                                 gradient: Gradient(stops: gradientStops),
                                 center: .center
                             ),
-                            lineWidth: isGenerating ? 2.5 : 1.0
+                            lineWidth: isGenerating ? 2.5 : 1.5
                         )
                         .opacity(glowOpacity)
                     
@@ -335,7 +338,7 @@ struct AIGlowModifier: ViewModifier {
             timer?.cancel()
             timer = nil
             withAnimation(.easeOut(duration: 2.0)) {
-                glowOpacity = 0.15
+                glowOpacity = 0.4
             }
         }
     }
