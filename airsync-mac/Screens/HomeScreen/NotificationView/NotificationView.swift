@@ -6,34 +6,62 @@
 //
 
 import SwiftUI
+import FoundationModels
 
 struct NotificationView: View {
     @ObservedObject var appState = AppState.shared
     @AppStorage("notificationStacks") private var notificationStacks = true
+    @StateObject private var summaryViewModel = NotificationSummaryViewModel()
     @State private var expandedPackages: Set<String> = []
     @State private var isSilentExpanded: Bool = false
 
     @ViewBuilder
     var body: some View {
         if !appState.notifications.isEmpty {
-            ZStack {
-                // stacked view on top when notificationStacks == true
-                stackedList
-                    .opacity(notificationStacks ? 1 : 0)
-                    .allowsHitTesting(notificationStacks)     // only interact when visible
-                    .accessibilityHidden(!notificationStacks)
-                    .animation(.easeInOut(duration: 0.5), value: notificationStacks)
+            VStack(spacing: 0) {
+                if !appState.disableAllAIFeatures && summaryViewModel.showSummary {
+                    NotificationSummaryView(viewModel: summaryViewModel)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+                }
 
-                // flat view on top when notificationStacks == false
-                flatList
-                    .opacity(notificationStacks ? 0 : 1)
-                    .allowsHitTesting(!notificationStacks)
-                    .accessibilityHidden(notificationStacks)
-                    .animation(.easeInOut(duration: 0.5), value: notificationStacks)
+                ZStack {
+                    // stacked view on top when notificationStacks == true
+                    stackedList
+                        .opacity(notificationStacks ? 1 : 0)
+                        .allowsHitTesting(notificationStacks)     // only interact when visible
+                        .accessibilityHidden(!notificationStacks)
+                        .animation(.easeInOut(duration: 0.5), value: notificationStacks)
+
+                    // flat view on top when notificationStacks == false
+                    flatList
+                        .opacity(notificationStacks ? 0 : 1)
+                        .allowsHitTesting(!notificationStacks)
+                        .accessibilityHidden(notificationStacks)
+                        .animation(.easeInOut(duration: 0.5), value: notificationStacks)
+                }
             }
             .whatsNewPopover(item: .firstNotification, arrowEdge: .top)
+            .toolbar {
+                if !appState.disableAllAIFeatures && appState.showAIToolbarButton {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            summaryViewModel.generateSummary(notifications: appState.notifications, androidApps: appState.androidApps)
+                        } label: {
+                            Label("Summarize", systemImage: "sparkles")
+                        }
+                        .disabled(summaryViewModel.isGeneratingSummary)
+                        .help("Summarize notifications with AI")
+                    }
+                }
+            }
             .onAppear {
                 WhatsNewTourManager.shared.evaluateActiveItem()
+            }
+            .onChange(of: appState.disableAllAIFeatures) { _, disabled in
+                if disabled {
+                    summaryViewModel.showSummary = false
+                }
             }
             .onChange(of: appState.notifications.count) { _, _ in
                 WhatsNewTourManager.shared.evaluateActiveItem()

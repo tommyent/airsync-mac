@@ -18,6 +18,8 @@ struct SettingsView: View {
                 QuickShareSettingsView()
             case .menubar:
                 MenubarSettingsView()
+            case .appleIntelligence:
+                AppleIntelligenceSettingsView()
             case .appearance:
                 AppearanceSettingsView()
             case .airsyncPlus:
