@@ -31,6 +31,7 @@
   "settings.notifications.ai.disableAll": "Disable all AI features",
   "settings.notifications.ai.showToolbarButton": "Summarize notifications button in toolbar",
   "settings.notifications.ai.includeSilent": "Include silent notifications",
+  "settings.notifications.ai.menubarSummary": "Menubar pop-up summary",
   "settings.notifications.ai.unavailable.title": "Apple Intelligence Unavailable",
   "settings.notifications.ai.unavailable.body": "These features require macOS 26.0 or later to run local language models.",
   "settings.notifications.calls": "Call Alerts",

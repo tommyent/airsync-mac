@@ -111,6 +111,7 @@ class AppState: ObservableObject {
         self.disableAllAIFeatures = UserDefaults.standard.bool(forKey: "disableAllAIFeatures")
         self.showAIToolbarButton = UserDefaults.standard.object(forKey: "showAIToolbarButton") == nil ? true : UserDefaults.standard.bool(forKey: "showAIToolbarButton")
         self.includeSilentInAIOption = UserDefaults.standard.bool(forKey: "includeSilentInAIOption")
+        self.enableMenubarAISummary = UserDefaults.standard.bool(forKey: "enableMenubarAISummary")
 
         let savedAdapterName = UserDefaults.standard.string(forKey: "selectedNetworkAdapterName")
         let validatedAdapter = AppState.validateAndGetNetworkAdapter(savedName: savedAdapterName)
@@ -732,6 +733,12 @@ class AppState: ObservableObject {
     @Published var includeSilentInAIOption: Bool {
         didSet {
             UserDefaults.standard.set(includeSilentInAIOption, forKey: "includeSilentInAIOption")
+        }
+    }
+
+    @Published var enableMenubarAISummary: Bool {
+        didSet {
+            UserDefaults.standard.set(enableMenubarAISummary, forKey: "enableMenubarAISummary")
         }
     }
 

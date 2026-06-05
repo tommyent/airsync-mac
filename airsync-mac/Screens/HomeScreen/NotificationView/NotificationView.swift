@@ -11,7 +11,7 @@ import FoundationModels
 struct NotificationView: View {
     @ObservedObject var appState = AppState.shared
     @AppStorage("notificationStacks") private var notificationStacks = true
-    @StateObject private var summaryViewModel = NotificationSummaryViewModel()
+    @ObservedObject private var summaryViewModel = NotificationSummaryViewModel.shared
     @State private var expandedPackages: Set<String> = []
     @State private var isSilentExpanded: Bool = false
 

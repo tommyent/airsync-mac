@@ -41,6 +41,12 @@ struct AppleIntelligenceSettingsView: View {
                                 icon: "bell.slash",
                                 isOn: $appState.includeSilentInAIOption
                             )
+                            
+                            SettingsToggleView(
+                                name: L("settings.notifications.ai.menubarSummary"),
+                                icon: "menubar.arrow.up.rectangle",
+                                isOn: $appState.enableMenubarAISummary
+                            )
                         }
                         .padding()
                         .glassBoxIfAvailable(radius: 18)
