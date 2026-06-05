@@ -193,6 +193,10 @@ class MenuBarManager: NSObject {
                 if let eventLocation = NSEvent.mouseLocation as NSPoint?,
                    let panelFrame = self?.menubarPanel?.frame,
                    !NSMouseInRect(eventLocation, panelFrame, false) {
+                    if let buttonWindow = button.window,
+                       NSMouseInRect(eventLocation, buttonWindow.frame, false) {
+                        return
+                    }
                     self?.hidePopover()
                 }
             }
@@ -200,6 +204,10 @@ class MenuBarManager: NSObject {
                 if let eventLocation = NSEvent.mouseLocation as NSPoint?,
                    let panelFrame = self?.menubarPanel?.frame,
                    !NSMouseInRect(eventLocation, panelFrame, false) {
+                    if let buttonWindow = button.window,
+                       NSMouseInRect(eventLocation, buttonWindow.frame, false) {
+                        return event
+                    }
                     self?.hidePopover()
                 }
                 return event
