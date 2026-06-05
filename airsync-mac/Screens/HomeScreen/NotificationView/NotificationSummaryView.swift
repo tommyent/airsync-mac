@@ -233,7 +233,7 @@ struct NotificationSummaryView: View {
         }
         .padding(16)
         .applyGlassViewIfAvailable(cornerRadius: 20)
-        .modifier(AIGlowModifier(isGenerating: viewModel.isGeneratingSummary))
+        .modifier(AIGlowModifier(isGenerating: viewModel.isGeneratingSummary, cornerRadius: 20))
         .onHover { hovering in
             isHovering = hovering
         }
@@ -249,7 +249,7 @@ struct MenubarSummaryCardView: View {
             HStack {
                 Image(systemName: "sparkles")
                     .foregroundColor(.accentColor)
-                Text("AI Summary")
+                Text("Summary")
                     .font(.system(size: 11, weight: .bold))
                 Spacer()
             }
@@ -292,29 +292,72 @@ struct MenubarSummaryCardView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(12)
-        .applyGlassViewIfAvailable(cornerRadius: 16)
-        .modifier(AIGlowModifier(isGenerating: viewModel.isGeneratingMenubarSummary))
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
 struct AIGlowModifier: ViewModifier {
     let isGenerating: Bool
+    let cornerRadius: CGFloat
+    
+    @State private var gradientStops: [Gradient.Stop] = AIGlowModifier.generateGradientStops()
+    @State private var timer: AnyCancellable?
     @State private var glowOpacity: Double = 0.15
     
     func body(content: Content) -> some View {
         content
             .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(Color.accentColor, lineWidth: isGenerating ? 2.0 : 1.0)
-                    .opacity(glowOpacity)
-            )
-            .shadow(
-                color: Color.accentColor.opacity(glowOpacity),
-                radius: isGenerating ? 12 : 6,
-                x: 0,
-                y: 0
+                ZStack {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .strokeBorder(
+                            AngularGradient(
+                                gradient: Gradient(stops: gradientStops),
+                                center: .center
+                            ),
+                            lineWidth: isGenerating ? 2.5 : 1.0
+                        )
+                        .opacity(glowOpacity)
+                    
+                    if isGenerating {
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .strokeBorder(
+                                AngularGradient(
+                                    gradient: Gradient(stops: gradientStops),
+                                    center: .center
+                                ),
+                                lineWidth: 6.0
+                            )
+                            .blur(radius: 4.0)
+                            .opacity(glowOpacity)
+                            .compositingGroup()
+
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .strokeBorder(
+                                AngularGradient(
+                                    gradient: Gradient(stops: gradientStops),
+                                    center: .center
+                                ),
+                                lineWidth: 10.0
+                            )
+                            .blur(radius: 8.0)
+                            .opacity(glowOpacity * 0.7)
+                            .compositingGroup()
+                            
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .strokeBorder(
+                                AngularGradient(
+                                    gradient: Gradient(stops: gradientStops),
+                                    center: .center
+                                ),
+                                lineWidth: 14.0
+                            )
+                            .blur(radius: 12.0)
+                            .opacity(glowOpacity * 0.4)
+                            .compositingGroup()
+                    }
+                }
             )
             .onAppear {
                 updateGlowState(isGenerating: isGenerating)
@@ -322,17 +365,58 @@ struct AIGlowModifier: ViewModifier {
             .onChange(of: isGenerating) { _, newValue in
                 updateGlowState(isGenerating: newValue)
             }
+            .onDisappear {
+                timer?.cancel()
+                timer = nil
+            }
     }
     
     private func updateGlowState(isGenerating: Bool) {
         if isGenerating {
+            timer = Timer.publish(every: 0.5, on: .main, in: .common)
+                .autoconnect()
+                .sink { _ in
+                    withAnimation(.easeInOut(duration: 1.0)) {
+                        gradientStops = AIGlowModifier.generateGradientStops()
+                    }
+                }
+            
             withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
                 glowOpacity = 0.8
             }
         } else {
+            timer?.cancel()
+            timer = nil
             withAnimation(.easeOut(duration: 2.0)) {
                 glowOpacity = 0.15
             }
         }
+    }
+    
+    static func generateGradientStops() -> [Gradient.Stop] {
+        [
+            Gradient.Stop(color: Color(hex: "BC82F3"), location: Double.random(in: 0...1)),
+            Gradient.Stop(color: Color(hex: "F5B9EA"), location: Double.random(in: 0...1)),
+            Gradient.Stop(color: Color(hex: "8D9FFF"), location: Double.random(in: 0...1)),
+            Gradient.Stop(color: Color(hex: "FF6778"), location: Double.random(in: 0...1)),
+            Gradient.Stop(color: Color(hex: "FFBA71"), location: Double.random(in: 0...1)),
+            Gradient.Stop(color: Color(hex: "C686FF"), location: Double.random(in: 0...1))
+        ].sorted { $0.location < $1.location }
+    }
+}
+
+fileprivate extension Color {
+    init(hex: String) {
+        let scanner = Scanner(string: hex)
+        _ = scanner.scanString("#")
+        
+        var hexNumber: UInt64 = 0
+        scanner.scanHexInt64(&hexNumber)
+        
+        let r = Double((hexNumber & 0xff0000) >> 16) / 255
+        let g = Double((hexNumber & 0x00ff00) >> 8) / 255
+        let b = Double(hexNumber & 0x0000ff) / 255
+        
+        self.init(red: r, green: g, blue: b)
     }
 }

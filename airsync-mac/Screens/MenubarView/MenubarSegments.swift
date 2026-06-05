@@ -270,6 +270,9 @@ struct NotificationsSegmentView: View {
 
                 if !appState.disableAllAIFeatures && appState.enableMenubarAISummary && filtered.count >= 3 {
                     MenubarSummaryCardView(viewModel: summaryViewModel)
+                        .padding(6)
+                        .segmentStyle()
+                        .modifier(AIGlowModifier(isGenerating: summaryViewModel.isGeneratingMenubarSummary, cornerRadius: 20))
                         .onAppear {
                             summaryViewModel.generateMenubarSummaryIfNeeded(notifications: appState.notifications, androidApps: appState.androidApps)
                         }
