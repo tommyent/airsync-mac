@@ -63,6 +63,8 @@ class BLECentralManager: NSObject, ObservableObject {
         // Restart scan periodically to avoid stale states
         scanTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
+            // Skip restart cycle when already connected — nothing to rediscover
+            guard self.connectionStatus == .scanning else { return }
             
             // Prune stale devices older than 25 seconds
             let now = Date()

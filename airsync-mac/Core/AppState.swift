@@ -179,8 +179,6 @@ class AppState: ObservableObject {
         // Reset mirroring state on launch to prevent auto-opening if it was open during last session
         self.isNativeMirroring = false
         self.isNativeDesktopMirroring = false
-        
-        startMediaTimer()
 
         // Cleanup stale WebDAV mounts from previous sessions
         WebDAVManager.shared.unmount()
@@ -267,8 +265,9 @@ class AppState: ObservableObject {
             activeCallDurationSec = max(0, Int(Date().timeIntervalSince1970 - Double(call.timestamp) / 1000.0))
         }
         
-        callDurationTimer = Timer.publish(every: 1.0, on: .main, in: .common)
-            .autoconnect()
+        // .default mode lets the OS coalesce the timer under load; tolerance allows up to 0.5s slip
+        let timer = Timer.publish(every: 1.0, on: .main, in: .default).autoconnect()
+        callDurationTimer = timer
             .sink { [weak self] _ in
                 guard let self = self, let call = self.activeCall else {
                     self?.stopCallTimer()
@@ -283,7 +282,9 @@ class AppState: ObservableObject {
         callDurationTimer = nil
         activeCallDurationSec = 0
     }
-    @Published var status: DeviceStatus? = nil
+    @Published var status: DeviceStatus? = nil {
+        didSet { syncMediaTimerToPlayState() }
+    }
     @Published var myDevice: Device? = nil
     @Published var port: UInt16 = Defaults.serverPort
     @Published var androidApps: [String: AndroidApp] = [:]
@@ -1321,9 +1322,10 @@ class AppState: ObservableObject {
     private func startClipboardMonitoring() {
         guard isClipboardSyncEnabled else { return }
         clipboardCancellable = Timer
-            .publish(every: 1.0, on: .main, in: .common)
+            .publish(every: 1.0, on: .main, in: .default)
             .autoconnect()
-            .sink { _ in
+            .sink { [weak self] _ in
+                guard let self = self, self.device != nil else { return }
                 let pasteboard = NSPasteboard.general
                 if let copiedString = pasteboard.string(forType: .string),
                    copiedString != self.lastClipboardValue {
@@ -1682,7 +1684,7 @@ class AppState: ObservableObject {
     
     func startMediaTimer() {
         guard mediaTickTimer == nil else { return }
-        mediaTickTimer = Timer.publish(every: 1.0, on: .main, in: .common)
+        mediaTickTimer = Timer.publish(every: 1.0, on: .main, in: .default)
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self,
@@ -1699,6 +1701,16 @@ class AppState: ObservableObject {
     func stopMediaTimer() {
         mediaTickTimer?.cancel()
         mediaTickTimer = nil
+    }
+
+    // Starts the seek-bar timer only while music is actively playing; stops it otherwise.
+    func syncMediaTimerToPlayState() {
+        let isPlaying = status?.music?.isPlaying ?? false
+        if isPlaying {
+            startMediaTimer()
+        } else {
+            stopMediaTimer()
+        }
     }
     
     func syncMediaPosition(incoming: Double) {

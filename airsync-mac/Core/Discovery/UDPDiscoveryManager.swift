@@ -282,11 +282,17 @@ class UDPDiscoveryManager: ObservableObject {
             
             listener?.start(queue: queue)
             
-            // Start periodic broadcast
+            // Start periodic broadcast — paused when a Wi-Fi device is already connected
             Timer.publish(every: 10, on: .main, in: .common)
                 .autoconnect()
                 .sink { [weak self] _ in
                     guard let self = self, self.isListening else { return }
+                    // Skip broadcast when connected over real Wi-Fi — Android already knows our address.
+                    // Keep broadcasting when only BLE is active so it can auto-switch to Wi-Fi.
+                    let isWifiConnected = AppState.shared.device != nil &&
+                                         AppState.shared.device?.ipAddress != "BLE" &&
+                                         AppState.shared.device?.ipAddress != "Bluetooth LE"
+                    guard !isWifiConnected else { return }
                     self.broadcastPresence()
                 }
                 .store(in: &cancellables)
@@ -398,8 +404,7 @@ class UDPDiscoveryManager: ObservableObject {
     }
     
     private func startPruning() {
-        // More frequent pruning for better UI responsiveness
-        Timer.publish(every: 10.0, on: .main, in: .common)
+        Timer.publish(every: 10.0, on: .main, in: .default)
             .autoconnect()
             .sink { [weak self] _ in
                 self?.pruneStaleDevices()
@@ -423,11 +428,12 @@ class UDPDiscoveryManager: ObservableObject {
                    // print("[Discovery] Pruned \(initialCount - newCount) devices. Remaining: \(newCount)")
                 }
                 
-                if self.discoveredDevices.contains(where: { device in 
+                let activeStatusChanged = self.discoveredDevices.contains(where: { device in
                     let wasActive = oldDevices.first(where: { $0.id == device.id })?.isActive ?? false
                     let isActive = device.isActive
                     return wasActive != isActive
-                }) {
+                })
+                if activeStatusChanged {
                     self.objectWillChange.send()
                 }
             }

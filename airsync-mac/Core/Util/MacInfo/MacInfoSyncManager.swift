@@ -72,7 +72,6 @@ class MacInfoSyncManager: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 7, repeats: true) { [weak self] _ in
             self?.fetch()
         }
-        RunLoop.main.add(timer!, forMode: .common)
     }
 
     private func stopPolling() {
