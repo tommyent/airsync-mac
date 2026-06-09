@@ -22,6 +22,9 @@ struct DiscoveredDevice: Identifiable, Equatable, Hashable {
     }
     
     var isActive: Bool {
+        if discoverySource == .mdns {
+            return true
+        }
         return Date().timeIntervalSince(lastSeen) < 20
     }
     
