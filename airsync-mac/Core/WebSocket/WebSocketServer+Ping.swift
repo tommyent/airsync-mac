@@ -122,15 +122,18 @@ extension WebSocketServer {
                     self.lock.lock()
                     self.activeSessions.removeAll { $0 === session }
                     self.lastActivity.removeValue(forKey: sessionId)
-                    self.lock.unlock()
                     session.writeBinary([]) // Force-close
+                    self.lock.unlock()
                     continue
                 }
             }
             
             let pingJson = "{\"type\":\"ping\",\"data\":{}}"
             
-            DispatchQueue.global(qos: .utility).async {
+            DispatchQueue.global(qos: .utility).async { [weak self] in
+                guard let self = self else { return }
+                self.lock.lock()
+                defer { self.lock.unlock() }
                 if let key = key, let encrypted = encryptMessage(pingJson, using: key) {
                     session.writeText(encrypted)
                 } else {
