@@ -72,8 +72,8 @@ struct airsync_macApp: App {
         // Initialize trial manager early so entitlement state is up-to-date on launch.
         _ = TrialManager.shared
         
-        // Start UDP Discovery (Active Burst + Passive Listen)
-        UDPDiscoveryManager.shared.start()
+        // Start Discovery Manager (mDNS + UDP fallback)
+        DiscoveryManager.shared.start()
         
     }
 

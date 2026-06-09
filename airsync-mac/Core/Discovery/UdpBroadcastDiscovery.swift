@@ -3,6 +3,11 @@ import Network
 import Combine
 import SwiftUI
 
+enum DiscoverySource: String, Codable, CaseIterable {
+    case mdns
+    case udp
+}
+
 struct DiscoveredDevice: Identifiable, Equatable, Hashable {
     let deviceId: String
     let name: String
@@ -10,6 +15,7 @@ struct DiscoveredDevice: Identifiable, Equatable, Hashable {
     let port: Int
     let type: String
     var lastSeen: Date
+    var discoverySource: DiscoverySource = .udp
     
     var id: String {
         return deviceId
@@ -28,9 +34,7 @@ struct DiscoveredDevice: Identifiable, Equatable, Hashable {
     }
 }
 
-class UDPDiscoveryManager: ObservableObject {
-    static let shared = UDPDiscoveryManager()
-    
+class UdpBroadcastDiscovery: ObservableObject {
     @Published var discoveredDevices: [DiscoveredDevice] = []
     
     private var listener: NWListener?
@@ -42,7 +46,7 @@ class UDPDiscoveryManager: ObservableObject {
     private var lastBroadcastTime: Date = .distantPast
     private var networkChangePendingWork: DispatchWorkItem?
     
-    private init() {
+    init() {
         // Init logic only
     }
     
@@ -71,7 +75,6 @@ class UDPDiscoveryManager: ObservableObject {
     // MARK: - Smart Triggers
     
     private func startMonitoring() {
-        // 1. System Sleep / Wake
         NSWorkspace.shared.notificationCenter.addObserver(
             self,
             selector: #selector(handleSystemSleep),
@@ -85,7 +88,6 @@ class UDPDiscoveryManager: ObservableObject {
             object: nil
         )
         
-        // 2. Network Change
         setupNetworkPathMonitor()
     }
     
@@ -95,12 +97,9 @@ class UDPDiscoveryManager: ObservableObject {
             guard let self = self else { return }
             guard path.status == .satisfied else { return }
 
-            // Debounce: cancel any pending burst and schedule a new one 2 s out.
-            // This prevents a flood of UDP sends during a rapid network transition.
             self.networkChangePendingWork?.cancel()
             let work = DispatchWorkItem { [weak self] in
                 guard let self = self else { return }
-                // Skip if we already sent a burst very recently (e.g. from wake handler)
                 guard Date().timeIntervalSince(self.lastBroadcastTime) >= 2.0 else { return }
                 print("[Discovery] Network change detected – broadcasting presence")
                 self.broadcastBurst()
@@ -123,7 +122,6 @@ class UDPDiscoveryManager: ObservableObject {
         networkMonitor?.cancel()
         networkMonitor = nil
         
-        // Cancel the periodic broadcast timer by temporarily stopping listening
         stopListening()
     }
     
@@ -138,12 +136,10 @@ class UDPDiscoveryManager: ObservableObject {
     
     // MARK: - Broadcasting
     
-    /// Sends a rapid burst of broadcasts to ensure delivery (Active Burst support)
     func broadcastBurst() {
         print("[Discovery] Triggering broadcast burst")
         lastBroadcastTime = Date()
         
-        // Send 3 packets with slight delay
         for i in 0..<3 {
             DispatchQueue.global().asyncAfter(deadline: .now() + (Double(i) * 0.1)) { [weak self] in
                 self?.broadcastPresence()
@@ -155,9 +151,7 @@ class UDPDiscoveryManager: ObservableObject {
         let adapters = WebSocketServer.shared.getAvailableNetworkAdapters()
         guard !adapters.isEmpty else { return }
         
-        // knownPeerIPs: List of IPs we have connected to before (e.g. Android on Tailscale)
         let knownPeerIPs = Set(QuickConnectManager.shared.lastConnectedDevices.values.map { $0.ipAddress })
-        
         let allIPs = adapters.map { $0.address }
         
         let info = AppState.shared.myDevice
@@ -165,13 +159,12 @@ class UDPDiscoveryManager: ObservableObject {
         let name = info?.name ?? Host.current().localizedName ?? "Mac"
         let uuid = getStableUUID()
         
-        // 1. Broadcast Loop
         let payload: [String: Any] = [
             "type": "presence",
             "deviceType": "mac",
             "id": uuid,
             "name": name,
-            "ips": allIPs, // Send ALL IPs
+            "ips": allIPs,
             "port": port
         ]
         
@@ -184,7 +177,6 @@ class UDPDiscoveryManager: ObservableObject {
         
         if let data = try? JSONSerialization.data(withJSONObject: payload),
            let jsonString = String(data: data, encoding: .utf8) {
-            
             for peerIP in knownPeerIPs {
                 if allIPs.contains(peerIP) { continue }
                 sendUnicast(message: jsonString, targetIP: peerIP)
@@ -207,11 +199,9 @@ class UDPDiscoveryManager: ObservableObject {
             switch state {
             case .ready:
                 connection.send(content: message.data(using: .utf8), completion: .contentProcessed({ _ in
-                    // Error ignored for broadcast
                     connection.cancel()
                 }))
             case .failed(_):
-                // print("[UDP] Broadcast connection failed (from \(sourceIP)): \(error)")
                 connection.cancel()
             default:
                 break
@@ -224,10 +214,7 @@ class UDPDiscoveryManager: ObservableObject {
     private func sendUnicast(message: String, targetIP: String) {
         let host = NWEndpoint.Host(targetIP)
         let port = broadcastPort
-        
-        // Use default UDP parameters (let OS route)
         let parameters = NWParameters.udp
-        
         let connection = NWConnection(host: host, port: port, using: parameters)
         
         connection.stateUpdateHandler = { state in
@@ -282,13 +269,10 @@ class UDPDiscoveryManager: ObservableObject {
             
             listener?.start(queue: queue)
             
-            // Start periodic broadcast — paused when a Wi-Fi device is already connected
             Timer.publish(every: 10, on: .main, in: .common)
                 .autoconnect()
                 .sink { [weak self] _ in
                     guard let self = self, self.isListening else { return }
-                    // Skip broadcast when connected over real Wi-Fi — Android already knows our address.
-                    // Keep broadcasting when only BLE is active so it can auto-switch to Wi-Fi.
                     let isWifiConnected = AppState.shared.device != nil &&
                                          AppState.shared.device?.ipAddress != "BLE" &&
                                          AppState.shared.device?.ipAddress != "Bluetooth LE"
@@ -306,17 +290,6 @@ class UDPDiscoveryManager: ObservableObject {
         listener?.cancel()
         listener = nil
         cancellables.removeAll()
-    }
-    
-    private func receive(on connection: NWConnection) {
-        connection.receiveMessage { [weak self] (data, context, isComplete, error) in
-            if let data = data, !data.isEmpty, let message = String(data: data, encoding: .utf8) {
-                self?.handleMessage(message)
-            }
-            if error == nil {
-                self?.receive(on: connection)
-            }
-        }
     }
     
     private func handleMessage(_ message: String) {
@@ -341,7 +314,6 @@ class UDPDiscoveryManager: ObservableObject {
         let name = json["name"] as? String ?? "Unknown Android"
         let port = json["port"] as? Int ?? 0
         
-        // Support both "ips" (array) and legacy "ip" (string)
         var incomingIps: Set<String> = []
         if let ipsArray = json["ips"] as? [String] {
             incomingIps = Set(ipsArray)
@@ -349,27 +321,26 @@ class UDPDiscoveryManager: ObservableObject {
             incomingIps = [singleIp]
         }
         
-        // Filter out unreachable IPs (e.g. Cellular NAT 10.x.x.x)
         let validIps = incomingIps.filter { isValidCandidateIP($0) }
         guard !validIps.isEmpty else { return }
         
         DispatchQueue.main.async {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                 if let index = self.discoveredDevices.firstIndex(where: { $0.deviceId == id }) {
-                    // Merge into existing device
                     var device = self.discoveredDevices[index]
                     device.ips.formUnion(validIps)
                     device.lastSeen = Date()
+                    device.discoverySource = .udp
                     self.discoveredDevices[index] = device
                 } else {
-                    // New device
                     let device = DiscoveredDevice(
                         deviceId: id,
                         name: name,
                         ips: validIps,
                         port: port,
                         type: deviceType,
-                        lastSeen: Date()
+                        lastSeen: Date(),
+                        discoverySource: .udp
                     )
                     self.discoveredDevices.append(device)
                 }
@@ -377,15 +348,9 @@ class UDPDiscoveryManager: ObservableObject {
         }
     }
     
-    /// IP validation
     private func isValidCandidateIP(_ ip: String) -> Bool {
-        // 1. Allow Tailscale (100.x.x.x)
         if ip.hasPrefix("100.") { return true }
-        
-        // 2. Allow Standard Local LAN (192.168.x.x)
         if ip.hasPrefix("192.168.") { return true }
-        
-        // 3. Allow Local LAN (172.16.x.x - 172.31.x.x)
         if ip.hasPrefix("172.") {
              let parts = ip.split(separator: ".")
              if parts.count > 1, let octet = Int(parts[1]), octet >= 16 && octet <= 31 {
@@ -393,14 +358,13 @@ class UDPDiscoveryManager: ObservableObject {
              }
         }
         
-        // Other
         if ip.hasPrefix("10.") {
             let adapters = WebSocketServer.shared.getAvailableNetworkAdapters()
             let hasTenNet = adapters.contains { $0.address.hasPrefix("10.") }
             return hasTenNet
         }
         
-        return false // Block public IPs or unknown ranges
+        return false
     }
     
     private func startPruning() {
@@ -423,11 +387,6 @@ class UDPDiscoveryManager: ObservableObject {
                     now.timeIntervalSince($0.lastSeen) <= 35
                 }
                 
-                let newCount = self.discoveredDevices.count
-                if newCount < initialCount {
-                   // print("[Discovery] Pruned \(initialCount - newCount) devices. Remaining: \(newCount)")
-                }
-                
                 let activeStatusChanged = self.discoveredDevices.contains(where: { device in
                     let wasActive = oldDevices.first(where: { $0.id == device.id })?.isActive ?? false
                     let isActive = device.isActive
@@ -440,7 +399,6 @@ class UDPDiscoveryManager: ObservableObject {
         }
     }
     
-    // Helper to get a stable ID for this Mac
     private func getStableUUID() -> String {
         let defaults = UserDefaults.standard
         if let uuid = defaults.string(forKey: "device_stable_uuid") {

@@ -323,7 +323,7 @@ class WebSocketServer: ObservableObject {
 
             // Re-announce presence immediately after restart so Android can find us
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                UDPDiscoveryManager.shared.broadcastBurst()
+                DiscoveryManager.shared.broadcastBurst()
                 self.lock.lock()
                 self.isRestarting = false
                 self.lock.unlock()
