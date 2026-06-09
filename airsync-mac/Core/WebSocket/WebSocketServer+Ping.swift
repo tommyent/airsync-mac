@@ -76,12 +76,43 @@ extension WebSocketServer {
             if isStale {
                 let isPrimary = (sessionId == primary)
                 if isPrimary {
-                    // Primary session has gone silent — full reconnect cycle
-                    print("[websocket] Primary session \(sessionId) is stale (>\(Int(timeout))s). Restarting server.")
-                    DispatchQueue.main.async {
+                    self.lock.lock()
+                    let alreadyRestarting = self.isRestarting
+                    self.lock.unlock()
+                    
+                    if alreadyRestarting {
+                        return
+                    }
+                    
+                    print("[websocket] Primary session \(sessionId) is stale (>\(Int(timeout))s). Scheduling restart in 10s.")
+                    
+                    self.lock.lock()
+                    self.isRestarting = true
+                    self.lock.unlock()
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) { [weak self] in
+                        guard let self = self else { return }
+                        
+                        self.lock.lock()
+                        let currentPrimary = self.primarySessionID
+                        self.lock.unlock()
+                        
+                        guard currentPrimary == sessionId, AppState.shared.device != nil else {
+                            self.lock.lock()
+                            self.isRestarting = false
+                            self.lock.unlock()
+                            print("[websocket] Grace period expired but primary session changed or device disconnected. Cancelling restart.")
+                            return
+                        }
+                        
                         AppState.shared.disconnectDevice()
                         ADBConnector.disconnectADB()
                         AppState.shared.adbConnected = false
+                        
+                        self.lock.lock()
+                        self.isRestarting = false
+                        self.lock.unlock()
+                        
                         self.restartServer()
                     }
                     return // Let the restart handle everything; stop iterating

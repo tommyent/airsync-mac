@@ -15,6 +15,7 @@ class DiscoveryManager: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var isRunning = false
     private var networkMonitor: NWPathMonitor?
+    private var reachabilityTimer: Timer?
     
     private init() {
         setupBonjourBrowser()
@@ -30,6 +31,7 @@ class DiscoveryManager: ObservableObject {
         bonjourAdvertiser.start()
         bonjourBrowser.start()
         udpDiscovery.start()
+        startReachabilityTimer()
     }
     
     func stop() {
@@ -40,6 +42,7 @@ class DiscoveryManager: ObservableObject {
         bonjourAdvertiser.stop()
         bonjourBrowser.stop()
         udpDiscovery.stop()
+        stopReachabilityTimer()
         
         mdnsDevices.removeAll()
         discoveredDevices.removeAll()
@@ -166,5 +169,109 @@ class DiscoveryManager: ObservableObject {
         }
         self.networkMonitor = monitor
         monitor.start(queue: DispatchQueue(label: "com.airsync.discoveryManager.network"))
+    }
+    
+    private func startReachabilityTimer() {
+        DispatchQueue.main.async {
+            self.reachabilityTimer?.invalidate()
+            self.reachabilityTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
+                self?.checkMdnsDevicesReachability()
+            }
+        }
+    }
+    
+    private func stopReachabilityTimer() {
+        DispatchQueue.main.async {
+            self.reachabilityTimer?.invalidate()
+            self.reachabilityTimer = nil
+        }
+    }
+    
+    private func checkMdnsDevicesReachability() {
+        let devices = mdnsDevices.values
+        if devices.isEmpty { return }
+        
+        for device in devices {
+            let ips = device.ips
+            let port = device.port
+            let deviceId = device.deviceId
+            let name = device.name
+            
+            var checkedCount = 0
+            var reachable = false
+            let total = ips.count
+            
+            if total == 0 {
+                DispatchQueue.main.async {
+                    self.mdnsDevices.removeValue(forKey: deviceId)
+                    self.mergeAndPublish()
+                }
+                continue
+            }
+            
+            for ip in ips {
+                verifyIPReachability(ip: ip, port: port) { [weak self] isReachable in
+                    guard let self = self else { return }
+                    checkedCount += 1
+                    if isReachable {
+                        reachable = true
+                    }
+                    
+                    if checkedCount == total {
+                        if !reachable {
+                            print("[Discovery] Device \(name) (\(deviceId)) is not reachable on any IP. Removing and restarting Bonjour browser.")
+                            DispatchQueue.main.async {
+                                self.mdnsDevices.removeValue(forKey: deviceId)
+                                self.mergeAndPublish()
+                                
+                                if self.isRunning {
+                                    self.bonjourBrowser.stop()
+                                    self.bonjourBrowser.start()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private func verifyIPReachability(ip: String, port: Int, completion: @escaping (Bool) -> Void) {
+        if ip == "Bluetooth LE" || ip == "Nearby" {
+            completion(true)
+            return
+        }
+        
+        let host = NWEndpoint.Host(ip)
+        let endpointPort = NWEndpoint.Port(integerLiteral: UInt16(port))
+        let connection = NWConnection(host: host, port: endpointPort, using: .tcp)
+        var completed = false
+        
+        connection.stateUpdateHandler = { state in
+            guard !completed else { return }
+            switch state {
+            case .ready:
+                completed = true
+                connection.cancel()
+                completion(true)
+            case .failed, .cancelled:
+                completed = true
+                completion(false)
+            case .waiting(_):
+                break
+            default:
+                break
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            if !completed {
+                completed = true
+                connection.cancel()
+                completion(false)
+            }
+        }
+        
+        connection.start(queue: DispatchQueue.global(qos: .utility))
     }
 }
