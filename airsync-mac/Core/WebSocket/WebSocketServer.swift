@@ -10,6 +10,7 @@ import Swifter
 import CryptoKit
 import UserNotifications
 import Combine
+import Network
 
 class WebSocketServer: ObservableObject {
     static let shared = WebSocketServer()
@@ -32,6 +33,8 @@ class WebSocketServer: ObservableObject {
     internal var lastKnownIP: String?
     internal var isRestarting: Bool = false
     internal var networkMonitorTimer: Timer?
+    internal var networkPathMonitor: NWPathMonitor?
+    internal let networkMonitorQueue = DispatchQueue(label: "com.airsync.networkmonitor", qos: .utility)
     internal let networkCheckInterval: TimeInterval = 10.0
     internal let lock = NSRecursiveLock()
     internal let fileQueue = DispatchQueue(label: "com.airsync.fileio")
@@ -320,7 +323,7 @@ class WebSocketServer: ObservableObject {
 
             // Re-announce presence immediately after restart so Android can find us
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                UDPDiscoveryManager.shared.broadcastBurst()
+                DiscoveryManager.shared.broadcastBurst()
                 self.lock.lock()
                 self.isRestarting = false
                 self.lock.unlock()

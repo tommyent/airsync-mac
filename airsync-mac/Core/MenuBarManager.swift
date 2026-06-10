@@ -113,10 +113,9 @@ class MenuBarManager: NSObject {
             .merge(with: Publishers.MergeMany(group2))
             .merge(with: Publishers.MergeMany(group3))
             .receive(on: RunLoop.main)
+            .debounce(for: .milliseconds(50), scheduler: RunLoop.main)
             .sink { [weak self] in
-                DispatchQueue.main.async {
-                    self?.updateStatusItem()
-                }
+                self?.updateStatusItem()
             }
             .store(in: &cancellables)
     }
@@ -193,6 +192,10 @@ class MenuBarManager: NSObject {
                 if let eventLocation = NSEvent.mouseLocation as NSPoint?,
                    let panelFrame = self?.menubarPanel?.frame,
                    !NSMouseInRect(eventLocation, panelFrame, false) {
+                    if let buttonWindow = button.window,
+                       NSMouseInRect(eventLocation, buttonWindow.frame, false) {
+                        return
+                    }
                     self?.hidePopover()
                 }
             }
@@ -200,6 +203,10 @@ class MenuBarManager: NSObject {
                 if let eventLocation = NSEvent.mouseLocation as NSPoint?,
                    let panelFrame = self?.menubarPanel?.frame,
                    !NSMouseInRect(eventLocation, panelFrame, false) {
+                    if let buttonWindow = button.window,
+                       NSMouseInRect(eventLocation, buttonWindow.frame, false) {
+                        return event
+                    }
                     self?.hidePopover()
                 }
                 return event

@@ -14,6 +14,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     case mirroring = "mirroring"
     case quickShare = "quick_share"
     case menubar = "menubar"
+    case appleIntelligence = "apple_intelligence"
     case appearance = "appearance"
     case airsyncPlus = "airsync_plus"
 
@@ -33,6 +34,8 @@ enum SettingsTab: String, CaseIterable, Identifiable {
             return L("settings.quickshare")
         case .menubar:
             return L("settings.menubar")
+        case .appleIntelligence:
+            return L("settings.appleIntelligence")
         case .appearance:
             return L("settings.appearance")
         case .airsyncPlus:
@@ -54,6 +57,8 @@ enum SettingsTab: String, CaseIterable, Identifiable {
             return "laptopcomputer.and.arrow.down"
         case .menubar:
             return "menubar.arrow.up.rectangle"
+        case .appleIntelligence:
+            return "sparkles"
         case .appearance:
             return "paintbrush"
         case .airsyncPlus:

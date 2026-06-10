@@ -236,7 +236,7 @@ struct MediaSegmentView: View {
 
 struct DiscoverySegmentView: View {
     @ObservedObject var appState = AppState.shared
-    @ObservedObject private var udpDiscovery = UDPDiscoveryManager.shared
+    @ObservedObject private var udpDiscovery = DiscoveryManager.shared
     @ObservedObject private var bleManager = BLECentralManager.shared
 
     var body: some View {
@@ -253,8 +253,11 @@ struct DiscoverySegmentView: View {
 
 struct NotificationsSegmentView: View {
     @ObservedObject var appState = AppState.shared
+    @ObservedObject var summaryViewModel = NotificationSummaryViewModel.shared
     
     var body: some View {
+        let filtered = appState.includeSilentInAIOption ? appState.notifications : appState.notifications.filter { $0.priority != "silent" }
+        
         if appState.device != nil && !appState.notifications.isEmpty {
             VStack(spacing: 6) {
                 HStack {
@@ -264,6 +267,19 @@ struct NotificationsSegmentView: View {
                 }
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
+
+                if !appState.disableAllAIFeatures && appState.enableMenubarAISummary && filtered.count >= 3 {
+                    MenubarSummaryCardView(viewModel: summaryViewModel)
+                        .padding(6)
+                        .segmentStyle()
+                        .modifier(AIGlowModifier(isGenerating: summaryViewModel.isGeneratingSummary, cornerRadius: 20))
+                        .onAppear {
+                            summaryViewModel.generateSummary(notifications: appState.notifications, androidApps: appState.androidApps)
+                        }
+                        .onChange(of: appState.notifications) { _, newNotifications in
+                            summaryViewModel.generateSummary(notifications: newNotifications, androidApps: appState.androidApps)
+                        }
+                }
 
                 MenuBarNotificationsListView()
             }

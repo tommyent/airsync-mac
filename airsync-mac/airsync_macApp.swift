@@ -60,6 +60,7 @@ struct airsync_macApp: App {
         WebSocketServer.shared.start(port: UInt16(chosenPort))
 
         Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { _ in
+            guard AppState.shared.device != nil else { return }
             AppState.shared.syncWithSystemNotifications()
         }
 
@@ -71,8 +72,8 @@ struct airsync_macApp: App {
         // Initialize trial manager early so entitlement state is up-to-date on launch.
         _ = TrialManager.shared
         
-        // Start UDP Discovery (Active Burst + Passive Listen)
-        UDPDiscoveryManager.shared.start()
+        // Start Discovery Manager (mDNS + UDP fallback)
+        DiscoveryManager.shared.start()
         
     }
 
@@ -167,22 +168,100 @@ struct airsync_macApp: App {
             }
             // Mirror menu: launch full device mirror or specific apps via scrcpy
             CommandMenu("Mirror") {
-                // Primary full-device mirror option
-                Button("Android Mirror (scrcpy)") {
-                    if let device = appState.device, appState.adbConnected {
-                        ADBConnector.startScrcpy(
-                            ip: device.ipAddress,
-                            port: UInt16(appState.adbPort),
-                            deviceName: device.name,
-                            package: nil
-                        )
+                // 1. Default Mirror Option
+                if appState.useNativeMirroringByDefault {
+                    Button("Android Mirror") {
+                        appState.isNativeMirroring = true
                     }
+                    .keyboardShortcut("p", modifiers: [.command])
+                    .disabled(!(appState.device != nil && appState.adbConnected))
+                } else {
+                    Button("scrcpy Mirror") {
+                        if let device = appState.device {
+                            ADBConnector.startScrcpy(
+                                ip: device.ipAddress,
+                                port: UInt16(appState.adbPort),
+                                deviceName: device.name
+                            )
+                        }
+                    }
+                    .keyboardShortcut("p", modifiers: [.command])
+                    .disabled(!(appState.device != nil && appState.adbConnected))
                 }
-                .disabled(!(appState.device != nil && appState.adbConnected))
-                
-                Button("Android Mirror") {
-                    appState.isNativeMirroring = true
+
+                // 2. Alternative Mirror Option
+                if appState.useNativeMirroringByDefault {
+                    Button("scrcpy Mirror") {
+                        if let device = appState.device {
+                            ADBConnector.startScrcpy(
+                                ip: device.ipAddress,
+                                port: UInt16(appState.adbPort),
+                                deviceName: device.name
+                            )
+                        }
+                    }
+                    .keyboardShortcut("p", modifiers: [.command, .shift])
+                    .disabled(!(appState.device != nil && appState.adbConnected))
+                } else {
+                    Button("Android Mirror") {
+                        appState.isNativeMirroring = true
+                    }
+                    .keyboardShortcut("p", modifiers: [.command, .shift])
+                    .disabled(!(appState.device != nil && appState.adbConnected))
                 }
+
+                Divider()
+
+                // 3. Desktop Mirroring Options (Plus only)
+                if appState.useNativeDesktopMirroringByDefault {
+                    Button("Native Desktop") {
+                        if appState.isPlus && appState.licenseCheck {
+                            appState.isNativeDesktopMirroring = true
+                        }
+                    }
+                    .keyboardShortcut("d", modifiers: [.command])
+                    .disabled(!(appState.isPlus && appState.licenseCheck && appState.device != nil && appState.adbConnected))
+
+                    Button("scrcpy Desktop") {
+                        if appState.isPlus && appState.licenseCheck, let device = appState.device {
+                            ADBConnector.startScrcpy(
+                                ip: device.ipAddress,
+                                port: UInt16(appState.adbPort),
+                                deviceName: device.name,
+                                desktop: true
+                            )
+                        }
+                    }
+                    .keyboardShortcut("d", modifiers: [.command, .shift])
+                    .disabled(!(appState.isPlus && appState.licenseCheck && appState.device != nil && appState.adbConnected))
+                } else {
+                    Button("scrcpy Desktop") {
+                        if appState.isPlus && appState.licenseCheck, let device = appState.device {
+                            ADBConnector.startScrcpy(
+                                ip: device.ipAddress,
+                                port: UInt16(appState.adbPort),
+                                deviceName: device.name,
+                                desktop: true
+                            )
+                        }
+                    }
+                    .keyboardShortcut("d", modifiers: [.command])
+                    .disabled(!(appState.isPlus && appState.licenseCheck && appState.device != nil && appState.adbConnected))
+
+                    Button("Native Desktop") {
+                        if appState.isPlus && appState.licenseCheck {
+                            appState.isNativeDesktopMirroring = true
+                        }
+                    }
+                    .keyboardShortcut("d", modifiers: [.command, .shift])
+                    .disabled(!(appState.isPlus && appState.licenseCheck && appState.device != nil && appState.adbConnected))
+                }
+
+                // 4. Sidebar Mirroring
+                Button(appState.isSidebarMirroring ? "Stop Mirroring Here" : "Mirror Here") {
+                    appState.isSidebarMirroring.toggle()
+                }
+                .keyboardShortcut("s", modifiers: [.command, .shift])
                 .disabled(!(appState.device != nil && appState.adbConnected))
 
                 // Only show app list if ADB is connected
