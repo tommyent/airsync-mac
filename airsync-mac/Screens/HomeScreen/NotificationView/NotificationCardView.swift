@@ -145,7 +145,18 @@ struct NotificationCardView: View {
                 Label(
                     "Mute app", systemImage: "bell.slash"
                 )
+            }
 
+            Divider()
+
+            Button {
+                AppState.shared.configuringLaunchPreferenceFor = notification.package
+            } label: {
+                let configured = AppState.shared.notificationLaunchPreferences[notification.package] != nil
+                Label(
+                    configured ? "Edit notification click action" : "Set notification click action",
+                    systemImage: "arrow.up.forward.app"
+                )
             }
         }
         .listRowSeparator(.hidden)

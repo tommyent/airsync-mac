@@ -93,6 +93,7 @@ class AppState: ObservableObject {
         self.ringForCalls = UserDefaults.standard.object(forKey: "ringForCalls") == nil ? true : UserDefaults.standard.bool(forKey: "ringForCalls")
         self.sendNowPlayingStatus = UserDefaults.standard.object(forKey: "sendNowPlayingStatus") == nil ? true : UserDefaults.standard.bool(forKey: "sendNowPlayingStatus")
         self.autoOpenLinks = UserDefaults.standard.bool(forKey: "autoOpenLinks")
+        self.openAppOnNotificationClick = UserDefaults.standard.bool(forKey: "openAppOnNotificationClick")
 
         var bRate = UserDefaults.standard.integer(forKey: "scrcpyBitrate")
         if bRate == 0 { bRate = 4 }
@@ -171,6 +172,7 @@ class AppState: ObservableObject {
 
         loadAppsFromDisk()
         loadPinnedApps()
+        loadNotificationLaunchPreferences()
         
         // Ensure dock icon visibility is applied on launch
         updateDockIconVisibility()
@@ -288,6 +290,9 @@ class AppState: ObservableObject {
     @Published var myDevice: Device? = nil
     @Published var port: UInt16 = Defaults.serverPort
     @Published var androidApps: [String: AndroidApp] = [:]
+    @Published var notificationLaunchPreferences: [String: MacAppLaunchPreference] = [:]
+    /// Set to trigger the "configure notification click action" sheet for a specific package
+    @Published var configuringLaunchPreferenceFor: String? = nil
 
     @Published var pinnedApps: [PinnedApp] = [] {
         didSet {
@@ -628,6 +633,12 @@ class AppState: ObservableObject {
     @Published var autoOpenLinks: Bool {
         didSet {
             UserDefaults.standard.set(autoOpenLinks, forKey: "autoOpenLinks")
+        }
+    }
+
+    @Published var openAppOnNotificationClick: Bool {
+        didSet {
+            UserDefaults.standard.set(openAppOnNotificationClick, forKey: "openAppOnNotificationClick")
         }
     }
 
@@ -1451,6 +1462,52 @@ class AppState: ObservableObject {
             }
         }
     }
+
+    // MARK: - Notification Launch Preferences
+
+    func saveNotificationLaunchPreferences() {
+        if let data = try? JSONEncoder().encode(notificationLaunchPreferences) {
+            UserDefaults.standard.set(data, forKey: "notificationLaunchPreferences")
+        }
+    }
+
+    func loadNotificationLaunchPreferences() {
+        guard let data = UserDefaults.standard.data(forKey: "notificationLaunchPreferences"),
+              let prefs = try? JSONDecoder().decode([String: MacAppLaunchPreference].self, from: data) else { return }
+        self.notificationLaunchPreferences = prefs
+    }
+
+    func setNotificationLaunchPreference(_ pref: MacAppLaunchPreference) {
+        notificationLaunchPreferences[pref.androidPackage] = pref
+        saveNotificationLaunchPreferences()
+    }
+
+    func removeNotificationLaunchPreference(for package: String) {
+        notificationLaunchPreferences.removeValue(forKey: package)
+        saveNotificationLaunchPreferences()
+    }
+
+    func handleNotificationTap(_ notif: Notification) {
+        // Try opening configured Mac app or web fallback first
+        let openedOnMac = MacAppLaunchManager.open(package: notif.package)
+        
+        // If not opened on Mac, fall back to scrcpy mirroring if available
+        if !openedOnMac {
+            if self.device != nil && self.adbConnected &&
+               notif.package != "" &&
+               notif.package != "com.sameerasw.airsync" &&
+               self.mirroringPlus {
+                ADBConnector.startScrcpy(
+                    ip: self.device?.ipAddress ?? "",
+                    port: self.adbPort,
+                    deviceName: self.device?.name ?? "My Phone",
+                    package: notif.package
+                )
+            }
+        }
+    }
+
+    // MARK: - App Storage
 
     func loadAppsFromDisk() {
         let url = appIconsDirectory().appendingPathComponent("apps.json")

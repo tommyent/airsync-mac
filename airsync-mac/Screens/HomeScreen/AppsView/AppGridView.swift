@@ -140,6 +140,16 @@ struct AppGridView: View {
                 }
             }
         }
+        .sheet(item: Binding(
+            get: {
+                appState.configuringLaunchPreferenceFor.map { AppConfigureTarget(id: $0) }
+            },
+            set: { appState.configuringLaunchPreferenceFor = $0?.id }
+        )) { target in
+            if let app = appState.androidApps[target.id] {
+                AppNotificationSettingsView(app: app)
+            }
+        }
     }
 
     private func launchApp(_ app: AndroidApp) {
@@ -159,6 +169,10 @@ struct AppGridView: View {
             }
         }
     }
+}
+
+private struct AppConfigureTarget: Identifiable {
+    let id: String
 }
 
 // MARK: - App Grid Item
@@ -304,6 +318,18 @@ private struct AppContextMenuContent: View {
             Label(
                 app.listening ? "Mute app" : "Unmute app",
                 systemImage: app.listening ? "bell.slash" : "bell.and.waves.left.and.right"
+            )
+        }
+
+        Divider()
+
+        Button {
+            appState.configuringLaunchPreferenceFor = app.packageName
+        } label: {
+            let configured = appState.notificationLaunchPreferences[app.packageName] != nil
+            Label(
+                configured ? "Edit notification click action" : "Set notification click action",
+                systemImage: "arrow.up.forward.app"
             )
         }
     }
