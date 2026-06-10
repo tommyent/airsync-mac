@@ -209,6 +209,7 @@ class AppState: ObservableObject {
             // Automatically switch to the appropriate tab when device connection state changes
             if device == nil {
                 self.selectedTab = .qr
+                self.isConnectionWeak = false
             } else if oldValue == nil {
                 self.selectedTab = .notifications
             }

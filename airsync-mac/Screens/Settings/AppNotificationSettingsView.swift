@@ -124,8 +124,6 @@ struct AppNotificationSettingsView: View {
                         .controlSize(.large)
                     }
                     
-                    Divider()
-                    
                     // Click Action Section
                     VStack(alignment: .leading, spacing: 12) {
                         Text("On Notification Click")
@@ -137,7 +135,8 @@ struct AppNotificationSettingsView: View {
                             }
                         }
                         .pickerStyle(.segmented)
-                        
+                        .controlSize(.large)
+
                         // Conditionally show tab content
                         Group {
                             switch clickActionTab {
@@ -160,12 +159,9 @@ struct AppNotificationSettingsView: View {
                 }
                 .padding(20)
                 
-                Divider()
-                
                 // Footer
-                HStack {
-                    if NotificationLaunchDefaults.findDefault(for: app.packageName) != nil,
-                       existing != nil {
+                if NotificationLaunchDefaults.findDefault(for: app.packageName) != nil && existing != nil {
+                    HStack {
                         Button("Reset to Default") {
                             appState.removeNotificationLaunchPreference(for: app.packageName)
                             if let entry = NotificationLaunchDefaults.findDefault(for: app.packageName) {
@@ -184,20 +180,12 @@ struct AppNotificationSettingsView: View {
                             }
                         }
                         .buttonStyle(.borderless)
+                        
+                        Spacer()
                     }
-                    
-                    Spacer()
-                    
-                    if clickActionTab == .webURL {
-                        Button("Save URL") {
-                            saveWebURL()
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(webURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
             }
         }
         .frame(width: 480, height: 520)
@@ -265,10 +253,15 @@ struct AppNotificationSettingsView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(8)
-            .background(Color(nsColor: .windowBackgroundColor))
-            .cornerRadius(8)
-            .padding(.bottom, 6)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(Color(nsColor: .controlBackgroundColor))
+            .cornerRadius(6)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.secondary.opacity(0.25), lineWidth: 0.5)
+            )
+            .padding(.bottom, 8)
 
             if isLoadingApps {
                 ProgressView("Scanning installed apps…")
@@ -278,29 +271,49 @@ struct AppNotificationSettingsView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(filteredMacApps) { macApp in
-                            let isSelected = {
-                                if case .macApp(let bundleID, _) = resolvedTarget {
-                                    return bundleID == macApp.bundleID
-                                }
-                                return false
-                            }()
-                            
-                            MacAppRowView(macApp: macApp, isSelected: isSelected) {
-                                let pref = MacAppLaunchPreference(
-                                    androidPackage: app.packageName,
-                                    androidAppName: app.name,
-                                    target: .macApp(bundleID: macApp.bundleID, appName: macApp.name)
-                                )
-                                appState.setNotificationLaunchPreference(pref)
-                            }
-                            
-                            Divider().padding(.leading, 44)
+                List(filteredMacApps) { macApp in
+                    let isSelected = {
+                        if case .macApp(let bundleID, _) = resolvedTarget {
+                            return bundleID == macApp.bundleID
+                        }
+                        return false
+                    }()
+                    
+                    HStack(spacing: 10) {
+                        if let icon = macApp.icon {
+                            Image(nsImage: icon)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 20, height: 20)
+                        } else {
+                            Image(systemName: "app")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 20, height: 20)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Text(macApp.name)
+                            .font(.body)
+                        
+                        Spacer()
+                        
+                        if isSelected {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(Color.accentColor)
                         }
                     }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        let pref = MacAppLaunchPreference(
+                            androidPackage: app.packageName,
+                            androidAppName: app.name,
+                            target: .macApp(bundleID: macApp.bundleID, appName: macApp.name)
+                        )
+                        appState.setNotificationLaunchPreference(pref)
+                    }
                 }
+                .listStyle(.sidebar)
             }
         }
     }
@@ -313,9 +326,17 @@ struct AppNotificationSettingsView: View {
                 .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 4) {
-                TextField("https://web.whatsapp.com", text: $webURLText)
-                    .textFieldStyle(.roundedBorder)
-                    .onChange(of: webURLText) { _, _ in webURLError = nil }
+                HStack(spacing: 8) {
+                    TextField("https://web.whatsapp.com", text: $webURLText)
+                        .textFieldStyle(.roundedBorder)
+                        .onChange(of: webURLText) { _, _ in webURLError = nil }
+                    
+                    Button("Save URL") {
+                        saveWebURL()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(webURLText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
 
                 if let error = webURLError {
                     Text(error)
@@ -348,60 +369,6 @@ struct AppNotificationSettingsView: View {
             target: .webURL(urlString: raw)
         )
         appState.setNotificationLaunchPreference(pref)
-    }
-}
-
-// MARK: - Mac App Row View Helper
-private struct MacAppRowView: View {
-    let macApp: InstalledMacApp
-    let isSelected: Bool
-    let onSelect: () -> Void
-    @State private var isHovered = false
-
-    var body: some View {
-        Button(action: onSelect) {
-            HStack(spacing: 10) {
-                Group {
-                    if let icon = macApp.icon {
-                        Image(nsImage: icon)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                    } else {
-                        Image(systemName: "app")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .frame(width: 26, height: 26)
-
-                Text(macApp.name)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-
-                Spacer()
-
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.accentColor)
-                }
-            }
-            .padding(.vertical, 7)
-            .padding(.horizontal, 8)
-            .contentShape(Rectangle())
-            .background(
-                isSelected
-                ? Color.accentColor.opacity(0.15)
-                : (isHovered ? Color.primary.opacity(0.05) : Color.clear)
-            )
-            .cornerRadius(8)
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.12)) {
-                isHovered = hovering
-            }
-        }
     }
 }
 

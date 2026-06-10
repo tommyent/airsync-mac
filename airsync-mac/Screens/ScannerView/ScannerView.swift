@@ -10,7 +10,7 @@ import SwiftUI
 struct ScannerView: View {
     @ObservedObject var appState = AppState.shared
     @ObservedObject private var quickConnectManager = QuickConnectManager.shared
-    @ObservedObject private var udpDiscovery = UDPDiscoveryManager.shared
+    @ObservedObject private var udpDiscovery = DiscoveryManager.shared
     @ObservedObject private var bleManager = BLECentralManager.shared
     @Namespace private var animation
 

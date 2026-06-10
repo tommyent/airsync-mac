@@ -236,7 +236,7 @@ struct MediaSegmentView: View {
 
 struct DiscoverySegmentView: View {
     @ObservedObject var appState = AppState.shared
-    @ObservedObject private var udpDiscovery = UDPDiscoveryManager.shared
+    @ObservedObject private var udpDiscovery = DiscoveryManager.shared
     @ObservedObject private var bleManager = BLECentralManager.shared
 
     var body: some View {

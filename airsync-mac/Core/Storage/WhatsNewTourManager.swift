@@ -105,7 +105,7 @@ class WhatsNewTourManager: ObservableObject {
     }
     
     private var hasNearbyDevices: Bool {
-        let hasUdp = !UDPDiscoveryManager.shared.discoveredDevices.isEmpty
+        let hasUdp = !DiscoveryManager.shared.discoveredDevices.isEmpty
         let hasBle = AppState.shared.isBLEEnabled && !BLECentralManager.shared.discoveredBLEDevices.isEmpty
         return hasUdp || hasBle
     }
