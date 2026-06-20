@@ -63,6 +63,7 @@
   "media.play": "Воспроизведение",
   "media.pause": "Пауза",
   "settings.wiredAdb": "Wired ADB support",
+  "settings.alwaysKillAdbBeforeConnect": "Always kill-server before connect",
   "quickshare.title": "Quick Share",
   "quickshare.button": "Quick Share",
   "quickshare.settings.title": "Quick Share Settings",
