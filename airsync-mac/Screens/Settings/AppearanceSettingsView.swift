@@ -43,7 +43,6 @@ struct AppearanceSettingsView: View {
                 VStack(spacing: 12) {
                     SettingsToggleView(name: "Check for updates automatically", icon: "sparkles", isOn: $automaticallyChecksForUpdates)
                     SettingsToggleView(name: "Download updates automatically", icon: "arrow.down.circle", isOn: $automaticallyDownloadsUpdates)
-                    SettingsToggleView(name: "Crash reporting", icon: "ant", isOn: $appState.isCrashReportingEnabled)
                     SettingsToggleView(name: L("settings.autoStartAtLogin"), icon: "play.circle", isOn: $appState.autoStartAtLogin)
                 }
                 .padding()

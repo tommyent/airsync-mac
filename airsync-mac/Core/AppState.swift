@@ -108,7 +108,6 @@ class AppState: ObservableObject {
         self.useNativeDesktopMirroringByDefault = UserDefaults.standard.bool(forKey: "useNativeDesktopMirroringByDefault")
         self.isMusicCardHidden = UserDefaults.standard.bool(forKey: "isMusicCardHidden")
         
-        self.isCrashReportingEnabled = UserDefaults.standard.object(forKey: "isCrashReportingEnabled") == nil ? true : UserDefaults.standard.bool(forKey: "isCrashReportingEnabled")
         self.disableAllAIFeatures = UserDefaults.standard.bool(forKey: "disableAllAIFeatures")
         self.showAIToolbarButton = UserDefaults.standard.object(forKey: "showAIToolbarButton") == nil ? true : UserDefaults.standard.bool(forKey: "showAIToolbarButton")
         self.includeSilentInAIOption = UserDefaults.standard.bool(forKey: "includeSilentInAIOption")
@@ -722,12 +721,6 @@ class AppState: ObservableObject {
                     WebDAVManager.shared.unmount()
                 }
             }
-        }
-    }
-
-    @Published var isCrashReportingEnabled: Bool {
-        didSet {
-            UserDefaults.standard.set(isCrashReportingEnabled, forKey: "isCrashReportingEnabled")
         }
     }
 

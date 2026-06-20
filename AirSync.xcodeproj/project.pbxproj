@@ -16,7 +16,6 @@
 		B9AEBC0A2E6235D3006BA027 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = B9AEBC092E6235D3006BA027 /* Sparkle */; };
 		B9B1C00D2E94E15D0005F6CB /* LottieUI in Frameworks */ = {isa = PBXBuildFile; productRef = B9B1C00C2E94E15D0005F6CB /* LottieUI */; };
 		B9C3181E2E37AA1D00367F16 /* QRCode in Frameworks */ = {isa = PBXBuildFile; productRef = B9C3181D2E37AA1D00367F16 /* QRCode */; };
-		B9D2631B2F60D97900628704 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = B9D2631A2F60D97900628704 /* Sentry */; };
 		B9D263292F60D9CF00628704 /* SentrySwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = B9D263282F60D9CF00628704 /* SentrySwiftUI */; };
 		B9D742FC2E39CF850053128A /* Swifter in Frameworks */ = {isa = PBXBuildFile; productRef = B9D742FB2E39CF850053128A /* Swifter */; };
 		B9E423832FBD914900526D40 /* scrcpy-server in Resources */ = {isa = PBXBuildFile; fileRef = B9E423822FBD914900526D40 /* scrcpy-server */; };
@@ -58,7 +57,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B9D2631B2F60D97900628704 /* Sentry in Frameworks */,
 				B94971602F62509A00F59BC9 /* BigInt in Frameworks */,
 				B9D263292F60D9CF00628704 /* SentrySwiftUI in Frameworks */,
 				B94971692F62525800F59BC9 /* SwiftProtobuf in Frameworks */,
@@ -125,7 +123,6 @@
 				B9D742FB2E39CF850053128A /* Swifter */,
 				B9AEBC092E6235D3006BA027 /* Sparkle */,
 				B9B1C00C2E94E15D0005F6CB /* LottieUI */,
-				B9D2631A2F60D97900628704 /* Sentry */,
 				B9D263282F60D9CF00628704 /* SentrySwiftUI */,
 				B949715F2F62509A00F59BC9 /* BigInt */,
 				B94971622F6250DE00F59BC9 /* ASN1 */,
@@ -691,11 +688,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B9C3181C2E37AA1D00367F16 /* XCRemoteSwiftPackageReference "QRCode" */;
 			productName = QRCode;
-		};
-		B9D2631A2F60D97900628704 /* Sentry */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B9D263162F60D26700628704 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
-			productName = Sentry;
 		};
 		B9D263282F60D9CF00628704 /* SentrySwiftUI */ = {
 			isa = XCSwiftPackageProductDependency;
