@@ -63,6 +63,7 @@
   "media.play": "播放",
   "media.pause": "暫停",
   "settings.wiredAdb": "Wired ADB support",
+  "settings.alwaysKillAdbBeforeConnect": "Always kill-server before connect",
   "quickshare.title": "Quick Share",
   "quickshare.button": "Quick Share",
   "quickshare.settings.title": "Quick Share Settings",
