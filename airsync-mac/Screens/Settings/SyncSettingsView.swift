@@ -104,6 +104,13 @@ struct SyncSettingsView: View {
                             }
 
                             HStack {
+                                Label(L("settings.alwaysKillAdbBeforeConnect"), systemImage: "arrow.clockwise.circle")
+                                Spacer()
+                                Toggle("", isOn: $appState.alwaysKillAdbBeforeConnect)
+                                    .toggleStyle(.switch)
+                            }
+
+                            HStack {
                                 Label("Fallback to mDNS services", systemImage: "antenna.radiowaves.left.and.right")
                                 Spacer()
                                 Toggle("", isOn: $appState.fallbackToMdns)
