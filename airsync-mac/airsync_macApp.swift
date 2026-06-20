@@ -188,11 +188,10 @@ struct airsync_macApp: App {
                     }
                 }
                 
-                #if DEBUG
                 Button("Simulate Crash") {
                     fatalError("Simulated Crash for Testing KSCrash")
                 }
-                #endif
+                .keyboardShortcut("c", modifiers: [.option, .command])
             }
             // Mirror menu: launch full device mirror or specific apps via scrcpy
             CommandMenu("Mirror") {
