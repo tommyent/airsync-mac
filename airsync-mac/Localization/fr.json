@@ -63,6 +63,7 @@
   "media.play": "Jouer",
   "media.pause": "Pause",
   "settings.wiredAdb": "Support d'ADB filaire",
+  "settings.alwaysKillAdbBeforeConnect": "Always kill-server before connect",
   "quickshare.title": "Quick Share",
   "quickshare.button": "Quick Share",
   "quickshare.settings.title": "Paramètres de Quick Share",
