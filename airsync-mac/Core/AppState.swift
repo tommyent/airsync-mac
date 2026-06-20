@@ -329,6 +329,7 @@ class AppState: ObservableObject {
     }
     @Published var adbConnecting: Bool = false
     @Published var manualAdbConnectionPending: Bool = false
+    @Published var userInitiatedAdbConnect: Bool = false
     @Published var currentDeviceWallpaperBase64: String? = nil
     @Published var isMenubarWindowOpen: Bool = false
     @Published var adbConnectionMode: ADBConnectionMode? = nil

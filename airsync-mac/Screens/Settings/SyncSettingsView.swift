@@ -60,6 +60,7 @@ struct SyncSettingsView: View {
                                                 if !appState.adbConnecting {
                                                     appState.adbConnectionResult = "" // Clear console
                                                     appState.manualAdbConnectionPending = true
+                                                    appState.userInitiatedAdbConnect = true
                                                     WebSocketServer.shared.sendRefreshAdbPortsRequest()
                                                     appState.adbConnectionResult = "Refreshing latest ADB ports from device..."
                                                 }
