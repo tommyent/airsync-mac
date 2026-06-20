@@ -47,6 +47,23 @@ struct AppearanceSettingsView: View {
                 }
                 .padding()
                 .glassBoxIfAvailable(radius: 18)
+
+                // 3. Crash Reporting
+                SettingsHeaderView(title: "Crash Reporting", icon: "ladybug")
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Label("Crash Reporting", systemImage: "ladybug")
+                        Spacer()
+                        Picker("", selection: $appState.crashReportingMode) {
+                            ForEach(CrashReportingMode.allCases) { mode in
+                                Text(mode.displayName).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                }
+                .padding()
+                .glassBoxIfAvailable(radius: 18)
             }
             .padding()
         }

@@ -113,6 +113,9 @@ class AppState: ObservableObject {
         self.includeSilentInAIOption = UserDefaults.standard.bool(forKey: "includeSilentInAIOption")
         self.enableMenubarAISummary = UserDefaults.standard.bool(forKey: "enableMenubarAISummary")
 
+        let savedCrashReportingMode = UserDefaults.standard.string(forKey: "crashReportingMode") ?? CrashReportingMode.manual.rawValue
+        self.crashReportingMode = CrashReportingMode(rawValue: savedCrashReportingMode) ?? .manual
+
         let savedAdapterName = UserDefaults.standard.string(forKey: "selectedNetworkAdapterName")
         let validatedAdapter = AppState.validateAndGetNetworkAdapter(savedName: savedAdapterName)
         self.selectedNetworkAdapterName = validatedAdapter
@@ -745,6 +748,12 @@ class AppState: ObservableObject {
     @Published var enableMenubarAISummary: Bool {
         didSet {
             UserDefaults.standard.set(enableMenubarAISummary, forKey: "enableMenubarAISummary")
+        }
+    }
+
+    @Published var crashReportingMode: CrashReportingMode {
+        didSet {
+            UserDefaults.standard.set(crashReportingMode.rawValue, forKey: "crashReportingMode")
         }
     }
 

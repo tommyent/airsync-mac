@@ -26,6 +26,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Foundation.Notification) {
+        CrashManager.shared.install()
+        CrashManager.shared.checkAndNotify(mode: AppState.shared.crashReportingMode)
+
         // Dock icon visibility is now controlled by AppState.hideDockIcon
         AppState.shared.updateDockIconVisibility()
         
