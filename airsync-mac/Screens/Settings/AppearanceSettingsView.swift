@@ -43,8 +43,24 @@ struct AppearanceSettingsView: View {
                 VStack(spacing: 12) {
                     SettingsToggleView(name: "Check for updates automatically", icon: "sparkles", isOn: $automaticallyChecksForUpdates)
                     SettingsToggleView(name: "Download updates automatically", icon: "arrow.down.circle", isOn: $automaticallyDownloadsUpdates)
-                    SettingsToggleView(name: "Crash reporting", icon: "ant", isOn: $appState.isCrashReportingEnabled)
                     SettingsToggleView(name: L("settings.autoStartAtLogin"), icon: "play.circle", isOn: $appState.autoStartAtLogin)
+                }
+                .padding()
+                .glassBoxIfAvailable(radius: 18)
+
+                // 3. Crash Reporting
+                SettingsHeaderView(title: "Crash Reporting", icon: "ladybug")
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Label("Crash Reporting", systemImage: "ladybug")
+                        Spacer()
+                        Picker("", selection: $appState.crashReportingMode) {
+                            ForEach(CrashReportingMode.allCases) { mode in
+                                Text(mode.displayName).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
                 }
                 .padding()
                 .glassBoxIfAvailable(radius: 18)

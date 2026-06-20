@@ -21,12 +21,6 @@ struct TopSegmentView: View {
                     .frame(width: toolButtonSize, height: toolButtonSize)
 
                 Menu {
-                    #if DEBUG
-                    Button("Crash", systemImage: "bolt.trianglebadge.exclamationmark") {
-                        fatalError("Sentry Test Crash")
-                    }
-                    #endif
-                    
                     Button("Quit", systemImage: "power") {
                         NSApplication.shared.terminate(nil)
                     }

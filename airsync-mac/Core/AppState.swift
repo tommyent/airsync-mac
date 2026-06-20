@@ -108,11 +108,13 @@ class AppState: ObservableObject {
         self.useNativeDesktopMirroringByDefault = UserDefaults.standard.bool(forKey: "useNativeDesktopMirroringByDefault")
         self.isMusicCardHidden = UserDefaults.standard.bool(forKey: "isMusicCardHidden")
         
-        self.isCrashReportingEnabled = UserDefaults.standard.object(forKey: "isCrashReportingEnabled") == nil ? true : UserDefaults.standard.bool(forKey: "isCrashReportingEnabled")
         self.disableAllAIFeatures = UserDefaults.standard.bool(forKey: "disableAllAIFeatures")
         self.showAIToolbarButton = UserDefaults.standard.object(forKey: "showAIToolbarButton") == nil ? true : UserDefaults.standard.bool(forKey: "showAIToolbarButton")
         self.includeSilentInAIOption = UserDefaults.standard.bool(forKey: "includeSilentInAIOption")
         self.enableMenubarAISummary = UserDefaults.standard.bool(forKey: "enableMenubarAISummary")
+
+        let savedCrashReportingMode = UserDefaults.standard.string(forKey: "crashReportingMode") ?? CrashReportingMode.manual.rawValue
+        self.crashReportingMode = CrashReportingMode(rawValue: savedCrashReportingMode) ?? .manual
 
         let savedAdapterName = UserDefaults.standard.string(forKey: "selectedNetworkAdapterName")
         let validatedAdapter = AppState.validateAndGetNetworkAdapter(savedName: savedAdapterName)
@@ -725,12 +727,6 @@ class AppState: ObservableObject {
         }
     }
 
-    @Published var isCrashReportingEnabled: Bool {
-        didSet {
-            UserDefaults.standard.set(isCrashReportingEnabled, forKey: "isCrashReportingEnabled")
-        }
-    }
-
     @Published var disableAllAIFeatures: Bool {
         didSet {
             UserDefaults.standard.set(disableAllAIFeatures, forKey: "disableAllAIFeatures")
@@ -752,6 +748,12 @@ class AppState: ObservableObject {
     @Published var enableMenubarAISummary: Bool {
         didSet {
             UserDefaults.standard.set(enableMenubarAISummary, forKey: "enableMenubarAISummary")
+        }
+    }
+
+    @Published var crashReportingMode: CrashReportingMode {
+        didSet {
+            UserDefaults.standard.set(crashReportingMode.rawValue, forKey: "crashReportingMode")
         }
     }
 
