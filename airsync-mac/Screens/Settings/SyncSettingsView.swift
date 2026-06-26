@@ -207,8 +207,8 @@ struct SyncSettingsView: View {
                         .padding()
                         .glassBoxIfAvailable(radius: 18)
 
-                        // 5. Remote Accessibility Control
-                        headerSection(title: "Remote Accessibility", icon: "accessibility")
+                        // 5. Remote Controls
+                        headerSection(title: "Remote Controls", icon: "accessibility")
                         VStack {
                             HStack {
                                 Label("Remote Control Permission", systemImage: "accessibility")
@@ -219,6 +219,7 @@ struct SyncSettingsView: View {
                             }
                         }
                         .padding()
+                        .glassBoxIfAvailable(radius: 18)
                         .sheet(isPresented: $showRemoteSheet) {
                             RemotePermissionView()
                         }
