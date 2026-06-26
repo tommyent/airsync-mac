@@ -46,9 +46,9 @@ struct MenuBarNotificationsListView: View {
                                     .font(.system(size: 10, weight: .bold))
                                     .frame(width: 28, height: 28)
                                     .foregroundColor(summaryViewModel.showMenubarSummary ? .accentColor : .primary)
+                                    .segmentStyle(cornerRadius: 14)
                             }
                             .buttonStyle(.plain)
-                            .segmentStyle(cornerRadius: 14)
                             .disabled(summaryViewModel.isGeneratingSummary)
                         }
                     }
@@ -74,18 +74,20 @@ struct MenuBarNotificationsListView: View {
                     Button {
                         appState.clearNotifications()
                     } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 10, weight: .bold))
-                            .frame(width: 28, height: 28)
+                        HStack(spacing: 0) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 10, weight: .bold))
+                                .frame(width: 28, height: 28)
  
-                        if nonSilentNotifications.count <= displayLimit {
-                            Text("Clear All")
-                                .font(.system(size: 11, weight: .medium))
-                                .padding(.trailing, 8)
+                            if nonSilentNotifications.count <= displayLimit {
+                                Text("Clear All")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .padding(.trailing, 8)
+                            }
                         }
+                        .segmentStyle(cornerRadius: 14)
                     }
                     .buttonStyle(.plain)
-                    .segmentStyle(cornerRadius: 14)
                 }
                 .padding(.top, 4)
             }
