@@ -129,10 +129,10 @@ struct ConnectionPillPopover: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 16) {
             
             if let device = appState.device {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 12) {
                     ConnectionInfoText(
                         label: "Device",
                         icon: "iphone.gen3",
