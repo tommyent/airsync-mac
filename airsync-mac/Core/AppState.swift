@@ -112,6 +112,7 @@ class AppState: ObservableObject {
         self.showAIToolbarButton = UserDefaults.standard.object(forKey: "showAIToolbarButton") == nil ? true : UserDefaults.standard.bool(forKey: "showAIToolbarButton")
         self.includeSilentInAIOption = UserDefaults.standard.bool(forKey: "includeSilentInAIOption")
         self.enableMenubarAISummary = UserDefaults.standard.bool(forKey: "enableMenubarAISummary")
+        self.autoMenubarSummary = UserDefaults.standard.bool(forKey: "autoMenubarSummary")
         self.alwaysKillAdbBeforeConnect = UserDefaults.standard.bool(forKey: "alwaysKillAdbBeforeConnect")
 
         let savedCrashReportingMode = UserDefaults.standard.string(forKey: "crashReportingMode") ?? CrashReportingMode.manual.rawValue
@@ -752,6 +753,12 @@ class AppState: ObservableObject {
     @Published var enableMenubarAISummary: Bool {
         didSet {
             UserDefaults.standard.set(enableMenubarAISummary, forKey: "enableMenubarAISummary")
+        }
+    }
+    
+    @Published var autoMenubarSummary: Bool {
+        didSet {
+            UserDefaults.standard.set(autoMenubarSummary, forKey: "autoMenubarSummary")
         }
     }
 

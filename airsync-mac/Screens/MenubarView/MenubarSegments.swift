@@ -264,19 +264,28 @@ struct NotificationsSegmentView: View {
                 .padding(.vertical, 2)
 
                 if !appState.disableAllAIFeatures && appState.enableMenubarAISummary && filtered.count >= 3 {
-                    MenubarSummaryCardView(viewModel: summaryViewModel)
-                        .padding(6)
-                        .segmentStyle()
-                        .modifier(AIGlowModifier(isGenerating: summaryViewModel.isGeneratingSummary, cornerRadius: 20))
-                        .onAppear {
-                            summaryViewModel.generateSummary(notifications: appState.notifications, androidApps: appState.androidApps)
-                        }
-                        .onChange(of: appState.notifications) { _, newNotifications in
-                            summaryViewModel.generateSummary(notifications: newNotifications, androidApps: appState.androidApps)
-                        }
+                    if summaryViewModel.showMenubarSummary {
+                        MenubarSummaryCardView(viewModel: summaryViewModel)
+                            .padding(6)
+                            .segmentStyle()
+                            .modifier(AIGlowModifier(isGenerating: summaryViewModel.isGeneratingSummary, cornerRadius: 20))
+                    }
                 }
 
                 MenuBarNotificationsListView()
+            }
+            .onAppear {
+                if appState.autoMenubarSummary {
+                    summaryViewModel.showMenubarSummary = true
+                }
+                if summaryViewModel.showMenubarSummary {
+                    summaryViewModel.generateSummary(notifications: appState.notifications, androidApps: appState.androidApps)
+                }
+            }
+            .onChange(of: appState.notifications) { _, newNotifications in
+                if summaryViewModel.showMenubarSummary {
+                    summaryViewModel.generateSummary(notifications: newNotifications, androidApps: appState.androidApps)
+                }
             }
         }
     }

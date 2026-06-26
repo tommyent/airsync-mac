@@ -9,6 +9,7 @@ import SwiftUI
 
 struct MenuBarNotificationsListView: View {
     @ObservedObject private var appState = AppState.shared
+    @ObservedObject private var summaryViewModel = NotificationSummaryViewModel.shared
     private let displayLimit = 4
     
     var body: some View {
@@ -30,6 +31,28 @@ struct MenuBarNotificationsListView: View {
             
             if nonSilentNotifications.count > 0 {
                 HStack(spacing: 6) {
+                    if !appState.disableAllAIFeatures && appState.enableMenubarAISummary {
+                        let hasValidNotifications = appState.includeSilentInAIOption ? !appState.notifications.isEmpty : appState.notifications.contains(where: { $0.priority != "silent" })
+                        if hasValidNotifications {
+                            Button {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                    summaryViewModel.showMenubarSummary.toggle()
+                                }
+                                if summaryViewModel.showMenubarSummary {
+                                    summaryViewModel.generateSummary(notifications: appState.notifications, androidApps: appState.androidApps)
+                                }
+                            } label: {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .frame(width: 28, height: 28)
+                                    .foregroundColor(summaryViewModel.showMenubarSummary ? .accentColor : .primary)
+                            }
+                            .buttonStyle(.plain)
+                            .segmentStyle(cornerRadius: 14)
+                            .disabled(summaryViewModel.isGeneratingSummary)
+                        }
+                    }
+
                     if nonSilentNotifications.count > displayLimit {
                         Button {
                             AppDelegate.shared?.showAndActivateMainWindow()
