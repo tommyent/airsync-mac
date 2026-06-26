@@ -943,3 +943,131 @@ class AirSyncDismissNotificationCommand: NSScriptCommand {
         return "Notification dismissed"
     }
 }
+
+@objc(AirSyncQuickShareStartDiscoveryCommand)
+class AirSyncQuickShareStartDiscoveryCommand: NSScriptCommand {
+    override func performDefaultImplementation() -> Any? {
+        DispatchQueue.main.async {
+            QuickShareManager.shared.startDiscovery()
+        }
+        return "QuickShare discovery started"
+    }
+}
+
+@objc(AirSyncQuickShareStopDiscoveryCommand)
+class AirSyncQuickShareStopDiscoveryCommand: NSScriptCommand {
+    override func performDefaultImplementation() -> Any? {
+        DispatchQueue.main.async {
+            QuickShareManager.shared.stopDiscovery()
+        }
+        return "QuickShare discovery stopped"
+    }
+}
+
+@objc(AirSyncQuickShareGetStatusCommand)
+class AirSyncQuickShareGetStatusCommand: NSScriptCommand {
+    override func performDefaultImplementation() -> Any? {
+        let qsm = QuickShareManager.shared
+        
+        var stateStr = "idle"
+        var deviceId: String? = nil
+        var pinCode: String? = nil
+        var errorMsg: String? = nil
+        
+        switch qsm.transferState {
+        case .idle:
+            stateStr = "idle"
+        case .discovering:
+            stateStr = "discovering"
+        case .connecting(let id):
+            stateStr = "connecting"
+            deviceId = id
+        case .awaitingPin(let pin, let id):
+            stateStr = "awaitingPin"
+            pinCode = pin
+            deviceId = id
+        case .sending(let id):
+            stateStr = "sending"
+            deviceId = id
+        case .receiving(let id):
+            stateStr = "receiving"
+            deviceId = id
+        case .incomingAwaitingConsent(_, _):
+            stateStr = "incomingAwaitingConsent"
+        case .finished:
+            stateStr = "finished"
+        case .failed(let err):
+            stateStr = "failed"
+            errorMsg = err
+        }
+        
+        var statusInfo: [String: Any] = [
+            "isRunning": qsm.isRunning,
+            "state": stateStr,
+            "progress": qsm.transferProgress
+        ]
+        
+        if let deviceId = deviceId {
+            statusInfo["deviceId"] = deviceId
+        }
+        if let pinCode = pinCode {
+            statusInfo["pinCode"] = pinCode
+        }
+        if let errorMsg = errorMsg {
+            statusInfo["error"] = errorMsg
+        }
+        
+        let devicesArray = qsm.discoveredDevices.map { dev in
+            [
+                "id": dev.id ?? "",
+                "name": dev.name,
+                "type": String(describing: dev.type)
+            ]
+        }
+        statusInfo["devices"] = devicesArray
+        
+        if let jsonData = try? JSONSerialization.data(withJSONObject: statusInfo, options: .prettyPrinted),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            return jsonString
+        }
+        
+        return "Failed to serialize QuickShare status"
+    }
+}
+
+@objc(AirSyncQuickShareSendFilesCommand)
+class AirSyncQuickShareSendFilesCommand: NSScriptCommand {
+    override func performDefaultImplementation() -> Any? {
+        guard let parameter = self.directParameter as? String else {
+            return "Error: Missing parameters"
+        }
+        
+        let components = parameter.components(separatedBy: "|")
+        guard components.count >= 2 else {
+            return "Error: Invalid parameter format. Expected 'device_id|file_path_1|file_path_2|...'"
+        }
+        
+        let deviceId = components[0]
+        let filePaths = Array(components.suffix(from: 1))
+        
+        // Find the device
+        guard let device = QuickShareManager.shared.discoveredDevices.first(where: { $0.id == deviceId }) else {
+            return "Error: Target device not found"
+        }
+        
+        let urls = filePaths.compactMap { path -> URL? in
+            let expandedPath = (path as NSString).expandingTildeInPath
+            return URL(fileURLWithPath: expandedPath)
+        }
+        
+        guard !urls.isEmpty else {
+            return "Error: No valid file paths found"
+        }
+        
+        DispatchQueue.main.async {
+            QuickShareManager.shared.sendFiles(urls: urls, to: device)
+        }
+        
+        return "Sending files to \(device.name)"
+    }
+}
