@@ -250,9 +250,10 @@ struct NotificationsSegmentView: View {
     @ObservedObject var summaryViewModel = NotificationSummaryViewModel.shared
     
     var body: some View {
-        let filtered = appState.includeSilentInAIOption ? appState.notifications : appState.notifications.filter { $0.priority != "silent" }
+        let nonSilentNotifications = appState.notifications.filter { $0.priority != "silent" }
+        let filtered = appState.includeSilentInAIOption ? appState.notifications : nonSilentNotifications
         
-        if appState.device != nil && !appState.notifications.isEmpty {
+        if appState.device != nil && !nonSilentNotifications.isEmpty {
             VStack(spacing: 6) {
                 HStack {
                     Text("Notifications")

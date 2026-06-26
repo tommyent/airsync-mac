@@ -482,10 +482,12 @@ class AppState: ObservableObject {
     var recentNotifyingPackages: [String] {
         var packages: [String] = []
         for notif in notifications {
-            if !packages.contains(notif.package) {
-                packages.append(notif.package)
-                if packages.count == 3 {
-                    break
+            if notif.priority != "silent" {
+                if !packages.contains(notif.package) {
+                    packages.append(notif.package)
+                    if packages.count == 3 {
+                        break
+                    }
                 }
             }
         }

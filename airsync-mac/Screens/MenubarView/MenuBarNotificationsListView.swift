@@ -12,8 +12,9 @@ struct MenuBarNotificationsListView: View {
     private let displayLimit = 4
     
     var body: some View {
-        VStack(spacing: 6) {
-            ForEach(appState.notifications.prefix(displayLimit)) { notif in
+        let nonSilentNotifications = appState.notifications.filter { $0.priority != "silent" }
+        return VStack(spacing: 6) {
+            ForEach(nonSilentNotifications.prefix(displayLimit)) { notif in
                 NotificationCardView(
                     notification: notif,
                     deleteNotification: { appState.removeNotification(notif) },
@@ -27,9 +28,9 @@ struct MenuBarNotificationsListView: View {
                 }
             }
             
-            if appState.notifications.count > 0 {
+            if nonSilentNotifications.count > 0 {
                 HStack(spacing: 6) {
-                    if appState.notifications.count > displayLimit {
+                    if nonSilentNotifications.count > displayLimit {
                         Button {
                             AppDelegate.shared?.showAndActivateMainWindow()
                             MenuBarManager.shared.hidePopover()
@@ -53,8 +54,8 @@ struct MenuBarNotificationsListView: View {
                         Image(systemName: "xmark")
                             .font(.system(size: 10, weight: .bold))
                             .frame(width: 28, height: 28)
-
-                        if appState.notifications.count <= displayLimit {
+ 
+                        if nonSilentNotifications.count <= displayLimit {
                             Text("Clear All")
                                 .font(.system(size: 11, weight: .medium))
                                 .padding(.trailing, 8)
