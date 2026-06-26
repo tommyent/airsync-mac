@@ -181,13 +181,13 @@ struct SyncSettingsView: View {
                             SettingsToggleView(name: "Send now playing status", icon: "play.circle", isOn: $appState.sendNowPlayingStatus)
 
                             HStack {
-                                Label("Show in Control Center", systemImage: "slider.horizontal.below.rectangle")
+                                Label("Show in control center", systemImage: "slider.horizontal.below.rectangle")
                                 Button(action: { showControlCenterInfo = true }) {
                                     Image(systemName: "info.circle")
                                         .foregroundStyle(.secondary)
                                 }
                                 .buttonStyle(.plain)
-                                .alert("Show in Control Center", isPresented: $showControlCenterInfo) {
+                                .alert("Show in control center", isPresented: $showControlCenterInfo) {
                                     Button("OK", role: .cancel) {}
                                 } message: {
                                     Text("This feature plays a silent audio track in background in order to show up in macOS media. This may prevent your multi-device bluetooth audio devices to not switch correctly.")
@@ -211,7 +211,7 @@ struct SyncSettingsView: View {
                         headerSection(title: "Remote Controls", icon: "accessibility")
                         VStack {
                             HStack {
-                                Label("Remote Control Permission", systemImage: "accessibility")
+                                Label("Remote control permission", systemImage: "accessibility")
                                 Spacer()
                                 GlassButtonView(label: "Configure", systemImage: "gearshape") {
                                     showRemoteSheet = true
