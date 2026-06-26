@@ -175,62 +175,9 @@ struct SyncSettingsView: View {
                         .padding()
                         .glassBoxIfAvailable(radius: 18)
 
-                        // 3. Notifications
-                        headerSection(title: "Notifications Sync", icon: "bell.badge")
+                        // 3. Media Player
+                        headerSection(title: "Media Player", icon: "play.circle")
                         VStack {
-                            SettingsToggleView(name: "Sync notification dismissals", icon: "bell.badge", isOn: $appState.dismissNotif)
-
-                            // Open app on notification click — BETA
-                            HStack {
-                                Label("Open app on notification click", systemImage: "arrow.up.forward.app")
-                                Text("BETA")
-                                    .font(.caption2)
-                                    .fontWeight(.semibold)
-                                    .padding(.horizontal, 5)
-                                    .padding(.vertical, 2)
-                                    .background(Color.orange.opacity(0.18))
-                                    .foregroundStyle(.orange)
-                                    .clipShape(Capsule())
-                                Spacer()
-                                Toggle("", isOn: $appState.openAppOnNotificationClick)
-                                    .toggleStyle(.switch)
-                            }
-
-
-
-                            HStack {
-                                Label("System Notifications", systemImage: "bell.badge")
-                                Spacer()
-
-                                if notificationsGranted {
-                                    Picker("", selection: $appState.notificationSound) {
-                                        Text("Default").tag("default")
-                                        ForEach(SystemSounds.availableSounds, id: \.self) { sound in
-                                            Text(sound).tag(sound)
-                                        }
-                                    }
-                                    .pickerStyle(MenuPickerStyle())
-                                    .frame(minWidth: 100)
-
-                                    Button(action: {
-                                        SystemSounds.playSound(appState.notificationSound)
-                                    }) {
-                                        Image(systemName: "play.circle")
-                                    }
-                                    .buttonStyle(.borderless)
-                                    .help("Test notification sound")
-                                } else {
-                                    GlassButtonView(
-                                        label: "Grant Permission",
-                                        systemImage: "bell.badge",
-                                        primary: true,
-                                        action: {
-                                            openNotificationSettings()
-                                        }
-                                    )
-                                }
-                            }
-
                             SettingsToggleView(name: "Send now playing status", icon: "play.circle", isOn: $appState.sendNowPlayingStatus)
 
                             HStack {
@@ -256,33 +203,6 @@ struct SyncSettingsView: View {
                                         }
                                     }
                             }
-                        }
-                        .padding()
-                        .glassBoxIfAvailable(radius: 18)
-                        .onAppear {
-                            checkNotificationPermissions()
-                        }
-                        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-                            checkNotificationPermissions()
-                        }
-
-                        // 4. Call Alerts
-                        headerSection(title: "Call Alerts", icon: "phone")
-                        VStack {
-                            HStack {
-                                Label("Call Alert", systemImage: "phone")
-                                Spacer()
-
-                                Picker("", selection: $appState.callNotificationMode) {
-                                    ForEach(CallNotificationMode.allCases, id: \.self) { mode in
-                                        Text(mode.displayName).tag(mode)
-                                    }
-                                }
-                                .pickerStyle(MenuPickerStyle())
-                                .frame(minWidth: 120)
-                            }
-
-                            SettingsToggleView(name: "Ring for calls", icon: "speaker.wave.3", isOn: $appState.ringForCalls)
                         }
                         .padding()
                         .glassBoxIfAvailable(radius: 18)
