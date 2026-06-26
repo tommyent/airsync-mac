@@ -31,8 +31,9 @@
             <result type="text" description="Returns media information as JSON or status message"/>
         </command>
         
-        <command name="launch mirroring" code="AirSlaun" description="Launch full device mirroring via scrcpy">
+        <command name="launch mirroring" code="AirSlaun" description="Launch full device mirroring via scrcpy or native">
             <cocoa class="AirSyncLaunchMirroringCommand"/>
+            <parameter name="mode" code="Mode" type="text" optional="yes" description="Mirroring mode: scrcpy or native"/>
             <result type="text" description="Returns launch status or error information as JSON"/>
         </command>
         
@@ -49,6 +50,7 @@
         
         <command name="desktop mode" code="AirSdesk" description="Launch desktop mode mirroring">
             <cocoa class="AirSyncDesktopModeCommand"/>
+            <parameter name="mode" code="Mode" type="text" optional="yes" description="Mirroring mode: scrcpy or native"/>
             <result type="text" description="Returns launch status or error information as JSON"/>
         </command>
         

@@ -180,6 +180,35 @@ class AirSyncLaunchMirroringCommand: NSScriptCommand {
             return "No device connected"
         }
 
+        // Determine if we should use native mirroring
+        let mode = self.evaluatedArguments?["mode"] as? String
+        let useNative: Bool
+        if let mode = mode?.lowercased(), !mode.isEmpty {
+            useNative = (mode == "native")
+        } else {
+            useNative = AppState.shared.useNativeMirroringByDefault
+        }
+
+        if useNative {
+            DispatchQueue.main.async {
+                AppState.shared.isNativeMirroring = true
+            }
+
+            let successInfo: [String: Any] = [
+                "success": true,
+                "message": "Launching native mirroring for \(device.name)",
+                "device": device.name,
+                "ip": device.ipAddress,
+                "mode": "native"
+            ]
+
+            if let jsonData = try? JSONSerialization.data(withJSONObject: successInfo, options: .prettyPrinted),
+               let jsonString = String(data: jsonData, encoding: .utf8) {
+                return jsonString
+            }
+            return "Starting native mirroring for \(device.name)"
+        }
+
         // Check if ADB is available
         guard ADBConnector.findExecutable(named: "adb", fallbackPaths: ADBConnector.possibleADBPaths) != nil else {
             let errorInfo: [String: Any] = [
@@ -238,7 +267,8 @@ class AirSyncLaunchMirroringCommand: NSScriptCommand {
             "success": true,
             "message": "Launching mirroring for \(device.name)",
             "device": device.name,
-            "ip": device.ipAddress
+            "ip": device.ipAddress,
+            "mode": "scrcpy"
         ]
 
         if let jsonData = try? JSONSerialization.data(withJSONObject: successInfo, options: .prettyPrinted),
@@ -425,6 +455,35 @@ class AirSyncDesktopModeCommand: NSScriptCommand {
             return "No device connected"
         }
 
+        // Determine if we should use native desktop mirroring
+        let mode = self.evaluatedArguments?["mode"] as? String
+        let useNative: Bool
+        if let mode = mode?.lowercased(), !mode.isEmpty {
+            useNative = (mode == "native")
+        } else {
+            useNative = AppState.shared.useNativeDesktopMirroringByDefault
+        }
+
+        if useNative {
+            DispatchQueue.main.async {
+                AppState.shared.isNativeDesktopMirroring = true
+            }
+
+            let successInfo: [String: Any] = [
+                "success": true,
+                "message": "Launching native desktop mode for \(device.name)",
+                "device": device.name,
+                "ip": device.ipAddress,
+                "mode": "native"
+            ]
+
+            if let jsonData = try? JSONSerialization.data(withJSONObject: successInfo, options: .prettyPrinted),
+               let jsonString = String(data: jsonData, encoding: .utf8) {
+                return jsonString
+            }
+            return "Starting native desktop mode for \(device.name)"
+        }
+
         // Check if ADB is connected
         guard AppState.shared.adbConnected else {
             let errorInfo: [String: Any] = [
@@ -454,8 +513,8 @@ class AirSyncDesktopModeCommand: NSScriptCommand {
             "success": true,
             "message": "Launching desktop mode mirroring for \(device.name)",
             "device": device.name,
-            "mode": "desktop",
-            "note": "Desktop mode requires Android 15+ and vendor support"
+            "ip": device.ipAddress,
+            "mode": "scrcpy"
         ]
 
         if let jsonData = try? JSONSerialization.data(withJSONObject: successInfo, options: .prettyPrinted),
