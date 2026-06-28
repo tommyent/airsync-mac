@@ -28,13 +28,10 @@ struct HomeView: View {
                 ZStack {
                     if appState.selectedTab == .settings {
                         SettingsSidebarView()
-                            .transition(.opacity.combined(with: .scale))
                     } else if appState.device == nil {
                         QRScannerSidebarView()
-                            .transition(.opacity.combined(with: .scale))
                     } else {
                         SidebarView()
-                            .transition(.opacity.combined(with: .scale))
                     }
                 }
                 .frame(minWidth: 270)
@@ -71,7 +68,7 @@ struct HomeView: View {
                 // Force view update to refresh window properties
             }
 
-            if appState.isConnectionWeak {
+            if appState.isConnectionWeak && appState.device != nil {
                 VStack {
                     Spacer()
                     ConnectionWeakOverlay(appState: appState)

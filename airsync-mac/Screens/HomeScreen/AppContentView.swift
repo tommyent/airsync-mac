@@ -118,6 +118,27 @@ struct AppContentView: View {
                     }
                 }
         }
+        .background(
+            Group {
+                Button("") {
+                    if appState.device != nil {
+                        appState.selectedTab = .notifications
+                    }
+                }
+                .keyboardShortcut("n", modifiers: [.command])
+                .opacity(0)
+                .allowsHitTesting(false)
+
+                Button("") {
+                    if appState.device != nil {
+                        appState.selectedTab = .apps
+                    }
+                }
+                .keyboardShortcut("a", modifiers: [.command])
+                .opacity(0)
+                .allowsHitTesting(false)
+            }
+        )
         .tabViewStyle(.automatic)
         .frame(minWidth: 550, minHeight: 510)
         .onAppear {

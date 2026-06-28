@@ -9,7 +9,7 @@ import SwiftUI
 
 struct MenubarDeviceDiscoveryView: View {
     @ObservedObject private var appState = AppState.shared
-    @ObservedObject private var udpDiscovery = UDPDiscoveryManager.shared
+    @ObservedObject private var udpDiscovery = DiscoveryManager.shared
     @ObservedObject private var quickConnectManager = QuickConnectManager.shared
     @ObservedObject private var bleManager = BLECentralManager.shared
     
@@ -131,6 +131,18 @@ struct CompactDeviceCard: View {
                         .padding(.horizontal, 6)
                         .padding(.vertical, 1)
                         .background(Color.accentColor.opacity(0.15), in: .capsule)
+                }
+                
+                if device.type != "ble" {
+                    Text(device.discoverySource == .mdns ? "mDNS" : "UDP")
+                        .font(.system(size: 7, weight: .bold))
+                        .foregroundColor(device.discoverySource == .mdns ? .accentColor : .secondary)
+                        .padding(.horizontal, 3)
+                        .padding(.vertical, 0.5)
+                        .background(
+                            (device.discoverySource == .mdns ? Color.accentColor : Color.secondary).opacity(0.12),
+                            in: RoundedRectangle(cornerRadius: 2)
+                        )
                 }
             }
             .font(.system(size: 8))

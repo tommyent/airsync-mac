@@ -10,12 +10,16 @@ struct SettingsView: View {
                 MyMacSettingsView()
             case .sync:
                 SyncSettingsView()
+            case .notifications:
+                NotificationsSettingsView()
             case .mirroring:
                 MirroringSettingsView()
             case .quickShare:
                 QuickShareSettingsView()
             case .menubar:
                 MenubarSettingsView()
+            case .appleIntelligence:
+                AppleIntelligenceSettingsView()
             case .appearance:
                 AppearanceSettingsView()
             case .airsyncPlus:

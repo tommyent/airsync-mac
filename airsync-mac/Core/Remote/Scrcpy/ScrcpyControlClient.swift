@@ -127,6 +127,14 @@ class ScrcpyControlClient {
         return Int16(i)
     }
     
+    func sendResizeDisplay(width: UInt16, height: UInt16) {
+        var data = Data()
+        data.append(21) // Type 21: Resize display
+        withUnsafeBytes(of: width.bigEndian) { data.append(contentsOf: $0) }
+        withUnsafeBytes(of: height.bigEndian) { data.append(contentsOf: $0) }
+        send(data: data)
+    }
+    
     private func send(data: Data) {
         connection?.send(content: data, completion: .contentProcessed({ error in
             if let error = error {

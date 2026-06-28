@@ -98,6 +98,7 @@
   "quickshare.device_sending_files": "%1$@ sta inviando %2$@",
   "quickshare.n_files": "%d file",
   "quickshare.drop.send_to": "Invia a %@",
+
   "quickshare.drop.pick_device": "Scegli un dispositivo a cui inviare",
   "settings.quickshare": "Quick Share e file",
   "settings.fileAccess.title": "Accesso ai file",

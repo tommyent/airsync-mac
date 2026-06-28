@@ -21,12 +21,6 @@ struct TopSegmentView: View {
                     .frame(width: toolButtonSize, height: toolButtonSize)
 
                 Menu {
-                    #if DEBUG
-                    Button("Crash", systemImage: "bolt.trianglebadge.exclamationmark") {
-                        fatalError("Sentry Test Crash")
-                    }
-                    #endif
-                    
                     Button("Quit", systemImage: "power") {
                         NSApplication.shared.terminate(nil)
                     }
@@ -118,16 +112,36 @@ struct TopSegmentView: View {
                                     appState.isNativeMirroring = true
                                 }
                             }
-                            
-                            Button("Desktop Mode") {
-                                ADBConnector.startScrcpy(
-                                    ip: appState.device?.ipAddress ?? "",
-                                    port: appState.adbPort,
-                                    deviceName: appState.device?.name ?? "My Phone",
-                                    desktop: true
-                                )
+
+                            Divider()
+
+                            if appState.useNativeDesktopMirroringByDefault {
+                                Button("Native Desktop") {
+                                    appState.isNativeDesktopMirroring = true
+                                }
+                                Button("scrcpy Desktop") {
+                                    ADBConnector.startScrcpy(
+                                        ip: appState.device?.ipAddress ?? "",
+                                        port: appState.adbPort,
+                                        deviceName: appState.device?.name ?? "My Phone",
+                                        desktop: true
+                                    )
+                                }
+                            } else {
+                                Button("Desktop Mode") {
+                                    ADBConnector.startScrcpy(
+                                        ip: appState.device?.ipAddress ?? "",
+                                        port: appState.adbPort,
+                                        deviceName: appState.device?.name ?? "My Phone",
+                                        desktop: true
+                                    )
+                                }
+                                Button("Native Desktop") {
+                                    appState.isNativeDesktopMirroring = true
+                                }
                             }
                         }
+
                     }
                     
                     
@@ -216,7 +230,7 @@ struct MediaSegmentView: View {
 
 struct DiscoverySegmentView: View {
     @ObservedObject var appState = AppState.shared
-    @ObservedObject private var udpDiscovery = UDPDiscoveryManager.shared
+    @ObservedObject private var udpDiscovery = DiscoveryManager.shared
     @ObservedObject private var bleManager = BLECentralManager.shared
 
     var body: some View {
@@ -233,9 +247,13 @@ struct DiscoverySegmentView: View {
 
 struct NotificationsSegmentView: View {
     @ObservedObject var appState = AppState.shared
+    @ObservedObject var summaryViewModel = NotificationSummaryViewModel.shared
     
     var body: some View {
-        if appState.device != nil && !appState.notifications.isEmpty {
+        let nonSilentNotifications = appState.notifications.filter { $0.priority != "silent" }
+        let filtered = appState.includeSilentInAIOption ? appState.notifications : nonSilentNotifications
+        
+        if appState.device != nil && !nonSilentNotifications.isEmpty {
             VStack(spacing: 6) {
                 HStack {
                     Text("Notifications")
@@ -245,7 +263,29 @@ struct NotificationsSegmentView: View {
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
 
+                if !appState.disableAllAIFeatures && appState.enableMenubarAISummary && filtered.count >= 3 {
+                    if summaryViewModel.showMenubarSummary {
+                        MenubarSummaryCardView(viewModel: summaryViewModel)
+                            .padding(6)
+                            .segmentStyle()
+                            .modifier(AIGlowModifier(isGenerating: summaryViewModel.isGeneratingSummary, cornerRadius: 20))
+                    }
+                }
+
                 MenuBarNotificationsListView()
+            }
+            .onAppear {
+                if appState.autoMenubarSummary {
+                    summaryViewModel.showMenubarSummary = true
+                }
+                if summaryViewModel.showMenubarSummary {
+                    summaryViewModel.generateSummary(notifications: appState.notifications, androidApps: appState.androidApps)
+                }
+            }
+            .onChange(of: appState.notifications) { _, newNotifications in
+                if summaryViewModel.showMenubarSummary {
+                    summaryViewModel.generateSummary(notifications: newNotifications, androidApps: appState.androidApps)
+                }
             }
         }
     }

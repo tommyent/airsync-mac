@@ -166,9 +166,41 @@ struct MetalVideoView: NSViewRepresentable {
             }
         }
         
-        // Secondary click as "Back" button (AKEYCODE_BACK = 4)
-        override func rightMouseDown(with event: NSEvent) { ScrcpyControlClient.shared.sendKeyEvent(action: 0, keycode: 4) }
-        override func rightMouseUp(with event: NSEvent) { ScrcpyControlClient.shared.sendKeyEvent(action: 1, keycode: 4) }
+        private var rightClickTimer: Timer?
+        private var rightClickDidTriggerHome = false
+        
+        private func sendHomeButton() {
+            ScrcpyControlClient.shared.sendKeyEvent(action: 0, keycode: 3)
+            ScrcpyControlClient.shared.sendKeyEvent(action: 1, keycode: 3)
+        }
+        
+        // Secondary click: long press sends Home (3), short press sends Back (4)
+        override func rightMouseDown(with event: NSEvent) {
+            rightClickDidTriggerHome = false
+            rightClickTimer?.invalidate()
+            rightClickTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
+                self?.rightClickDidTriggerHome = true
+                self?.sendHomeButton()
+            }
+        }
+        
+        override func rightMouseUp(with event: NSEvent) {
+            rightClickTimer?.invalidate()
+            rightClickTimer = nil
+            if !rightClickDidTriggerHome {
+                ScrcpyControlClient.shared.sendKeyEvent(action: 0, keycode: 4)
+                ScrcpyControlClient.shared.sendKeyEvent(action: 1, keycode: 4)
+            }
+        }
+        
+        // Middle click sends Home (3)
+        override func otherMouseDown(with event: NSEvent) {
+            if event.buttonNumber == 2 {
+                sendHomeButton()
+            } else {
+                super.otherMouseDown(with: event)
+            }
+        }
         
         override func scrollWheel(with event: NSEvent) {
             guard let client = streamClient, client.videoWidth > 0, client.videoHeight > 0 else { return }

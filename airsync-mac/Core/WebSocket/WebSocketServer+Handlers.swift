@@ -144,6 +144,8 @@ extension WebSocketServer {
             }
 
             if (!AppState.shared.adbConnected && (AppState.shared.adbEnabled || AppState.shared.manualAdbConnectionPending || AppState.shared.wiredAdbEnabled) && AppState.shared.isPlus) {
+                let killServer = AppState.shared.userInitiatedAdbConnect || AppState.shared.alwaysKillAdbBeforeConnect
+                
                 if AppState.shared.wiredAdbEnabled {
                     ADBConnector.getWiredDevices { wiredDevices in
                         let mappedSerial = AppState.shared.selectedWiredSerial ?? AppState.shared.deviceAdbSerials[deviceId]
@@ -157,13 +159,15 @@ extension WebSocketServer {
                                         AppState.shared.adbConnectionMode = .wired
                                         AppState.shared.adbConnectionResult = "Connected via Wired ADB (Serial: \(matchedDevice.serial))"
                                         AppState.shared.manualAdbConnectionPending = false
+                                        AppState.shared.userInitiatedAdbConnect = false
                                     }
                                 } else {
                                     if AppState.shared.adbEnabled || AppState.shared.manualAdbConnectionPending {
-                                        ADBConnector.connectToADB(ip: ip)
+                                        ADBConnector.connectToADB(ip: ip, killServer: killServer)
                                     }
                                     DispatchQueue.main.async {
                                         AppState.shared.manualAdbConnectionPending = false
+                                        AppState.shared.userInitiatedAdbConnect = false
                                     }
                                 }
                             } else {
@@ -175,29 +179,33 @@ extension WebSocketServer {
                                         AppState.shared.adbConnectionMode = .wired
                                         AppState.shared.adbConnectionResult = "Connected via Wired ADB (Serial: \(singleDevice.serial))"
                                         AppState.shared.manualAdbConnectionPending = false
+                                        AppState.shared.userInitiatedAdbConnect = false
                                     }
                                 } else {
                                     if AppState.shared.adbEnabled || AppState.shared.manualAdbConnectionPending {
-                                        ADBConnector.connectToADB(ip: ip)
+                                        ADBConnector.connectToADB(ip: ip, killServer: killServer)
                                     }
                                     DispatchQueue.main.async {
                                         AppState.shared.manualAdbConnectionPending = false
+                                        AppState.shared.userInitiatedAdbConnect = false
                                     }
                                 }
                             }
                         } else {
                             if AppState.shared.adbEnabled || AppState.shared.manualAdbConnectionPending {
-                                ADBConnector.connectToADB(ip: ip)
+                                ADBConnector.connectToADB(ip: ip, killServer: killServer)
                             }
                             DispatchQueue.main.async {
                                 AppState.shared.manualAdbConnectionPending = false
+                                AppState.shared.userInitiatedAdbConnect = false
                             }
                         }
                     }
                 } else if AppState.shared.adbEnabled || AppState.shared.manualAdbConnectionPending {
                     // Try wireless connection directly
-                    ADBConnector.connectToADB(ip: ip)
+                    ADBConnector.connectToADB(ip: ip, killServer: killServer)
                     AppState.shared.manualAdbConnectionPending = false
+                    AppState.shared.userInitiatedAdbConnect = false
                 }
             }
 
@@ -658,7 +666,9 @@ extension WebSocketServer {
     private func handleRemoteControl(_ message: Message) {
         if let dict = message.data.value as? [String: Any],
            let action = dict["action"] as? String {
+            #if DEBUG
             print("[WebSocketServer] Received remote action: \(action)")
+            #endif
             
             switch action {
             case "keypress":

@@ -51,6 +51,13 @@ class BLECentralManager: NSObject, ObservableObject {
     
     func startScanning() {
         guard centralManager.state == .poweredOn else { return }
+        
+        let isRegularConnection = AppState.shared.device?.ipAddress != nil && AppState.shared.device?.ipAddress != "BLE"
+        guard !isRegularConnection else {
+            print("[BLE] Skip scan: Regular connection is active.")
+            return
+        }
+        
         print("[BLE] Starting scan...")
         connectionStatus = .scanning
         
@@ -63,6 +70,8 @@ class BLECentralManager: NSObject, ObservableObject {
         // Restart scan periodically to avoid stale states
         scanTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
+            // Skip restart cycle when already connected — nothing to rediscover
+            guard self.connectionStatus == .scanning else { return }
             
             // Prune stale devices older than 25 seconds
             let now = Date()
@@ -212,6 +221,12 @@ extension BLECentralManager: CBCentralManagerDelegate {
         
         // Auto connect if enabled and not manually disconnected
         if AppState.shared.isBLEAutoConnectEnabled && !isManuallyDisconnected {
+            let isWifiConnected = AppState.shared.device != nil && AppState.shared.device?.ipAddress != "BLE" && AppState.shared.device?.ipAddress != "Bluetooth LE"
+            if isWifiConnected {
+                print("[BLE] Regular Wi-Fi connection is active — skipping auto-connect to BLE")
+                return
+            }
+            
             let token = UserDefaults.standard.string(forKey: "bleAuthToken") ?? ""
             if token.isEmpty {
                 return

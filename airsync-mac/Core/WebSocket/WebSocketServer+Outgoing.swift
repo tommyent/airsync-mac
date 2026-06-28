@@ -22,13 +22,12 @@ extension WebSocketServer {
     @discardableResult
     func sendToFirstAvailable(message: String) -> Bool {
         lock.lock()
+        defer { lock.unlock() }
         guard let pId = primarySessionID,
               let session = activeSessions.first(where: { ObjectIdentifier($0) == pId }) else {
-            lock.unlock()
             return false
         }
         let key = symmetricKey
-        lock.unlock()
         
         if let key = key, let encrypted = encryptMessage(message, using: key) {
             session.writeText(encrypted)

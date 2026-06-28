@@ -45,8 +45,9 @@ struct MirroringSettingsView: View {
         .onAppear {
             tempBitrate = Double(AppState.shared.scrcpyBitrate)
             tempResolution = Double(AppState.shared.scrcpyResolution)
-            xCoords = UserDefaults.standard.manualPositionCoords[0]
-            yCoords = UserDefaults.standard.manualPositionCoords[1]
+            let coords = UserDefaults.standard.manualPositionCoords
+            xCoords = coords.indices.contains(0) ? coords[0] : "0"
+            yCoords = coords.indices.contains(1) ? coords[1] : "0"
         }
     }
 
@@ -74,19 +75,17 @@ struct MirroringSettingsView: View {
 
     private var unlockedMirroringViewContent: some View {
         VStack(alignment: .leading, spacing: 20) {
-            VStack{
+            VStack(spacing: 16) {
                 HStack{
-                    Label(L("settings.mirroring.defaultMode"), systemImage: "rectangle.on.rectangle.badge.gearshape")
+                    Label(L("settings.mirroring.defaultMode"), systemImage: "iphone")
                     Spacer()
                     Picker("", selection: $appState.useNativeMirroringByDefault) {
-                        Label(L("settings.mirroring.scrcpy.title"), systemImage: "macwindow").tag(false)
-                        Label(L("settings.mirroring.native.title"), systemImage: "apps.iphone").tag(true)
+                        Text(L("settings.mirroring.scrcpy.title")).tag(false)
+                        Text(L("settings.mirroring.native.title")).tag(true)
                     }
                     .pickerStyle(.segmented)
                     .controlSize(.large)
                 }
-
-                Spacer(minLength: 8)
 
                 if(appState.useNativeMirroringByDefault) {
                     Text(L("settings.mirroring.native.info"))
@@ -97,6 +96,28 @@ struct MirroringSettingsView: View {
                 }
             }
             .padding()
+            .glassBoxIfAvailable(radius: 18)
+
+            VStack(spacing: 16) {
+                HStack{
+                    Label(L("settings.mirroring.desktop.defaultMode"), systemImage: "desktopcomputer")
+                    Spacer()
+                    Picker("", selection: $appState.useNativeDesktopMirroringByDefault) {
+                        Text(L("settings.mirroring.scrcpy.title")).tag(false)
+                        Text(L("settings.mirroring.native.title")).tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .controlSize(.large)
+                }
+
+                Text(appState.useNativeDesktopMirroringByDefault
+                     ? "Uses the built-in stream for desktop mode — no scrcpy binary required."
+                     : "Launches desktop mode via the scrcpy binary.")
+                    .font(.caption)
+            }
+            .padding()
+            .glassBoxIfAvailable(radius: 18)
+
             
             androidMirroringSection
 
@@ -248,11 +269,10 @@ struct MirroringSettingsView: View {
 
     private var lockedMirroringViewContent: some View {
         VStack(spacing: 20) {
-            Spacer()
-
             Image(systemName: "apps.iphone.badge.plus")
                 .font(.system(size: 64))
                 .foregroundStyle(Color.accentColor)
+                .padding(.top, 40)
                 .padding(.bottom, 10)
 
             PlusFeaturePopover(message: L("settings.mirroring.plusFeatureMessage"))
@@ -262,9 +282,9 @@ struct MirroringSettingsView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
                 )
-
-            Spacer()
+                .padding(.bottom, 40)
         }
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder

@@ -56,10 +56,24 @@ struct DeviceCard: View {
 
                                 // Show primary IP excluding Bluetooth LE and Nearby
                                 let displayIP = device.ips.first(where: { $0 != "Bluetooth LE" && $0 != "Nearby" && !$0.hasPrefix("100.") }) ?? device.ips.first(where: { $0 != "Bluetooth LE" && $0 != "Nearby" }) ?? ""
-                                Text(displayIP)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                if !displayIP.isEmpty && displayIP != "Bluetooth LE" && displayIP != "Nearby" {
+                                    HStack(spacing: 4) {
+                                        Text(displayIP)
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        
+                                        Text(device.discoverySource == .mdns ? "mDNS" : "UDP")
+                                            .font(.system(size: 8, weight: .semibold))
+                                            .foregroundColor(device.discoverySource == .mdns ? .accentColor : .secondary)
+                                            .padding(.horizontal, 4)
+                                            .padding(.vertical, 1)
+                                            .background(
+                                                (device.discoverySource == .mdns ? Color.accentColor : Color.secondary).opacity(0.15),
+                                                in: RoundedRectangle(cornerRadius: 3)
+                                            )
+                                    }
                                     .transition(.opacity)
+                                }
                             }
                         }
                         .font(.caption2)
@@ -85,12 +99,13 @@ struct DeviceCard: View {
                     Spacer()
                     
                     GlassButtonView(
-                        label: "Connect",
+                        label: isLastConnected ? "\(L("button.connect")) ⌘⏎" : L("button.connect"),
                         systemImage: "bolt.circle.fill",
                         primary: device.isActive,
                         isLoading: isLoading,
                         action: connectAction
                     )
+                    .conditionalKeyboardShortcut(isEnabled: isLastConnected)
                     .frame(maxWidth: .infinity)
                     
                     if !device.isActive {
@@ -142,5 +157,22 @@ struct DeviceCard: View {
                 self.wallpaperImage = nil
             }
         }
+    }
+}
+
+fileprivate struct KeyboardShortcutModifier: ViewModifier {
+    var isEnabled: Bool
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content.keyboardShortcut(.return, modifiers: .command)
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    fileprivate func conditionalKeyboardShortcut(isEnabled: Bool) -> some View {
+        self.modifier(KeyboardShortcutModifier(isEnabled: isEnabled))
     }
 }

@@ -15,6 +15,7 @@ class MenuBarManager: NSObject {
     private var statusItem: NSStatusItem?
     private var menubarPanel: MenubarPanel?
     private var eventMonitor: Any?
+    private var localEventMonitor: Any?
     private var cancellables = Set<AnyCancellable>()
     private var appState = AppState.shared
     private var temporaryDragLabel: String?
@@ -112,10 +113,9 @@ class MenuBarManager: NSObject {
             .merge(with: Publishers.MergeMany(group2))
             .merge(with: Publishers.MergeMany(group3))
             .receive(on: RunLoop.main)
+            .debounce(for: .milliseconds(50), scheduler: RunLoop.main)
             .sink { [weak self] in
-                DispatchQueue.main.async {
-                    self?.updateStatusItem()
-                }
+                self?.updateStatusItem()
             }
             .store(in: &cancellables)
     }
@@ -187,13 +187,29 @@ class MenuBarManager: NSObject {
 
             appState.isMenubarWindowOpen = true
             
-            // Monitor clicks outside to close
+            // Monitor clicks outside to close (both globally and locally within current app)
             eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
                 if let eventLocation = NSEvent.mouseLocation as NSPoint?,
                    let panelFrame = self?.menubarPanel?.frame,
                    !NSMouseInRect(eventLocation, panelFrame, false) {
+                    if let buttonWindow = button.window,
+                       NSMouseInRect(eventLocation, buttonWindow.frame, false) {
+                        return
+                    }
                     self?.hidePopover()
                 }
+            }
+            localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+                if let eventLocation = NSEvent.mouseLocation as NSPoint?,
+                   let panelFrame = self?.menubarPanel?.frame,
+                   !NSMouseInRect(eventLocation, panelFrame, false) {
+                    if let buttonWindow = button.window,
+                       NSMouseInRect(eventLocation, buttonWindow.frame, false) {
+                        return event
+                    }
+                    self?.hidePopover()
+                }
+                return event
             }
         }
     }
@@ -204,6 +220,10 @@ class MenuBarManager: NSObject {
         if let monitor = eventMonitor {
             NSEvent.removeMonitor(monitor)
             eventMonitor = nil
+        }
+        if let localMonitor = localEventMonitor {
+            NSEvent.removeMonitor(localMonitor)
+            localEventMonitor = nil
         }
     }
 }
@@ -433,7 +453,7 @@ struct MenubarStatusView: View {
                 
                 // 3. Unread Badge Count
                 if appState.menubarNotificationStyle == "both" || appState.menubarNotificationStyle == "count" {
-                    let unreadCount = appState.notifications.count
+                    let unreadCount = appState.notifications.filter { $0.priority != "silent" }.count
                     if unreadCount > 0 {
                         if appState.menubarUnreadBadgeStyle == "badge" {
                             Text("\(unreadCount)")
