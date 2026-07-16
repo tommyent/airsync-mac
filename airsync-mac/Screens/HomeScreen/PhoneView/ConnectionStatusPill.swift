@@ -29,6 +29,7 @@ struct ConnectionStatusPill: View {
                     if appState.adbConnecting {
                         ProgressView()
                             .controlSize(.small)
+                            .help("ADB Connecting...")
                             .transition(.asymmetric(
                                 insertion: .scale.combined(with: .opacity),
                                 removal: .opacity
@@ -38,6 +39,7 @@ struct ConnectionStatusPill: View {
                         HStack(spacing: 6) {
                             Image(systemName: "iphone.gen3.crop.circle")
                                 .contentTransition(.symbolEffect(.replace))
+                                .help("ADB Connected")
                             
                             // ADB Mode Icon
                             Image(systemName: adbModeIcon)
