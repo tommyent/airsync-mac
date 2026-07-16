@@ -108,10 +108,10 @@ struct ADBConnector {
                 
                 var devices: [WiredADBDevice] = []
                 for line in lines {
-                    if line.contains("device") && line.contains("usb:") {
-                        let parts = line.split(separator: " ").filter { !$0.isEmpty }
-                        if !parts.isEmpty {
-                            let serial = String(parts[0])
+                    let parts = line.split(separator: " ").filter { !$0.isEmpty }
+                    if parts.count >= 2 && parts[1] == "device" {
+                        let serial = String(parts[0])
+                        if !serial.contains(":") {
                             var model = "Unknown Device"
                             for part in parts {
                                 if part.hasPrefix("model:") {
@@ -438,10 +438,8 @@ struct ADBConnector {
                 let serialToUse: String?
                 if let mapped = mappedSerial, devices.contains(where: { $0.serial == mapped }) {
                     serialToUse = mapped
-                } else if mappedSerial == nil {
-                    serialToUse = devices.first?.serial
                 } else {
-                    serialToUse = nil
+                    serialToUse = devices.first?.serial
                 }
                 
                 DispatchQueue.global(qos: .userInitiated).async {
@@ -540,10 +538,8 @@ struct ADBConnector {
                         let serialToUse: String?
                         if let mapped = mappedSerial, devices.contains(where: { $0.serial == mapped }) {
                             serialToUse = mapped
-                        } else if mappedSerial == nil {
-                            serialToUse = devices.first?.serial
                         } else {
-                            serialToUse = nil
+                            serialToUse = devices.first?.serial
                         }
                         
                         DispatchQueue.global(qos: .userInitiated).async {
@@ -591,10 +587,8 @@ struct ADBConnector {
                 let serialToUse: String?
                 if let mapped = mappedSerial, devices.contains(where: { $0.serial == mapped }) {
                     serialToUse = mapped
-                } else if mappedSerial == nil {
-                    serialToUse = devices.first?.serial
                 } else {
-                    serialToUse = nil
+                    serialToUse = devices.first?.serial
                 }
                 
                 DispatchQueue.global(qos: .userInitiated).async {
