@@ -29,6 +29,7 @@ struct ConnectionStatusPill: View {
                     if appState.adbConnecting {
                         ProgressView()
                             .controlSize(.small)
+                            .help("ADB Connecting...")
                             .transition(.asymmetric(
                                 insertion: .scale.combined(with: .opacity),
                                 removal: .opacity
@@ -38,6 +39,7 @@ struct ConnectionStatusPill: View {
                         HStack(spacing: 6) {
                             Image(systemName: "iphone.gen3.crop.circle")
                                 .contentTransition(.symbolEffect(.replace))
+                                .help("ADB Connected")
                             
                             // ADB Mode Icon
                             Image(systemName: adbModeIcon)
@@ -146,8 +148,8 @@ struct ConnectionPillPopover: View {
                         activeIp: appState.device?.ipAddress == "BLE" ? nil : appState.activeMacIp
                     )
                     
-                    if appState.isPlus && appState.adbConnected {
-                        if appState.adbConnectionMode == .wired {
+                    if appState.isPlus {
+                        if appState.wiredAdbEnabled {
                             HStack {
                                 Label(L("connection.wiredAdb"), systemImage: "cable.connector")
                                 Spacer()
@@ -169,7 +171,9 @@ struct ConnectionPillPopover: View {
                                 .pickerStyle(MenuPickerStyle())
                                 .frame(width: 140)
                             }
-                        } else {
+                        }
+                        
+                        if appState.adbConnected && appState.adbConnectionMode == .wireless {
                             ConnectionInfoText(
                                 label: "ADB Connection",
                                 icon: "airplay.audio",
