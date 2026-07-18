@@ -280,13 +280,16 @@ struct ADBConnector {
                 if !AppState.shared.suppressAdbFailureAlerts {
                     let alert = NSAlert()
                     alert.alertStyle = .warning
-                    alert.addButton(withTitle: "Don't warn me again")
                     alert.addButton(withTitle: "OK")
+                    alert.addButton(withTitle: "Pair with ADB QR")
+                    alert.addButton(withTitle: "Don't warn me again")
                     alert.messageText = "Failed to connect to ADB."
-                    alert.informativeText = "Suggestions:\n• Ensure your Android device is in Wireless debugging mode\n• Try toggling Wireless Debugging off and on again\n• Reconnect to the same Wi-Fi as your Mac"
+                    alert.informativeText = "Suggestions:\n• Pair your device using either the \"Pair with ADB QR\" button or via the command line (adb pair)\n• Ensure your Android device has Wireless Debugging enabled\n• Reconnect to the exact same Wi-Fi network as your Mac"
                     
                     presentAlertAsynchronously(alert) { response in
-                        if response == .alertFirstButtonReturn {
+                        if response == .alertSecondButtonReturn {
+                            AppState.shared.showADBPairingSheet = true
+                        } else if response == .alertThirdButtonReturn {
                             AppState.shared.suppressAdbFailureAlerts = true
                         }
                     }
@@ -500,7 +503,15 @@ struct ADBConnector {
                         DispatchQueue.main.async {
                             AppState.shared.adbConnectionResult = "scrcpy exited:\n" + output
                             if process.terminationStatus != 0 {
-                                presentScrcpyAlert(title: "Mirroring Ended With Errors", informative: "See ADB Console for details.")
+                                let lower = output.lowercased()
+                                if lower.contains("unauthorized") || lower.contains("auth") || lower.contains("pair") {
+                                    presentScrcpyPairingAlert(
+                                        title: "Device Not Paired",
+                                        informative: "Your Android device is not paired or authorized with this Mac. Please pair the device first using either the ADB QR Code or the command line (adb pair)."
+                                    )
+                                } else {
+                                    presentScrcpyAlert(title: "Mirroring Ended With Errors", informative: "See ADB Console for details.")
+                                }
                             }
                         }
                     }
@@ -642,5 +653,20 @@ private extension ADBConnector {
         alert.informativeText = informative + "\n\nCheck the ADB Console in Settings for detailed logs."
         alert.addButton(withTitle: "OK")
         presentAlertAsynchronously(alert)
+    }
+
+    static func presentScrcpyPairingAlert(title: String, informative: String) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = title
+        alert.informativeText = informative + "\n\nCheck the ADB Console in Settings for detailed logs."
+        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: "Pair with ADB QR")
+        
+        presentAlertAsynchronously(alert) { response in
+            if response == .alertSecondButtonReturn {
+                AppState.shared.showADBPairingSheet = true
+            }
+        }
     }
 }

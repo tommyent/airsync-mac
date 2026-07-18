@@ -786,6 +786,7 @@ class AppState: ObservableObject {
 
     // File browser state
     @Published var showFileBrowser: Bool = false
+    @Published var showADBPairingSheet: Bool = false
     @Published var browsePath: String = "/sdcard/"
     @Published var browseItems: [FileBrowserItem] = []
     @Published var isBrowsingLoading: Bool = false

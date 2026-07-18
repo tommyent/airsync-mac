@@ -158,6 +158,9 @@ struct AppContentView: View {
         .sheet(isPresented: $appState.showFileBrowser) {
             FileBrowserView(onClose: { appState.showFileBrowser = false })
         }
+        .sheet(isPresented: $appState.showADBPairingSheet) {
+            ADBPairingSheetView()
+        }
         .alert(isPresented: $showDisconnectAlert) {
             Alert(
                 title: Text("Disconnect Device"),
