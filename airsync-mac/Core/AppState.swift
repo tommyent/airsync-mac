@@ -254,12 +254,15 @@ class AppState: ObservableObject {
     @Published var callEvents: [CallEvent] = []
     private var callDurationTimer: AnyCancellable?
     @Published var activeCallDurationSec: Int = 0
+    @Published var lastCallProgressReceived: Date? = nil
 
     @Published var activeCall: CallEvent? = nil {
         didSet {
             if activeCall != nil {
+                lastCallProgressReceived = Date()
                 startCallTimer()
             } else {
+                lastCallProgressReceived = nil
                 stopCallTimer()
             }
         }
@@ -281,6 +284,22 @@ class AppState: ObservableObject {
                     return
                 }
                 self.activeCallDurationSec = max(0, Int(Date().timeIntervalSince1970 - Double(call.timestamp) / 1000.0))
+                
+                if let lastProgress = self.lastCallProgressReceived {
+                    let timeSinceProgress = Date().timeIntervalSince(lastProgress)
+                    if timeSinceProgress > 12.0 {
+                        print("[state] No call progress received for 12 seconds. Auto-dismissing call.")
+                        self.activeCall = nil
+                        let allEventIds = self.callEvents.map { $0.eventId }
+                        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: allEventIds)
+                        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: allEventIds)
+                        self.stopCallRingtone()
+                        
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            self.callEvents.removeAll()
+                        }
+                    }
+                }
             }
     }
     
@@ -908,6 +927,11 @@ class AppState: ObservableObject {
             ringtonePlayer = nil
             print("[state] Stopped call ringtone")
         }
+    }
+
+    func receivedCallProgress(eventId: String) {
+        guard let call = activeCall, call.eventId == eventId else { return }
+        lastCallProgressReceived = Date()
     }
 
     func updateCallEvent(_ callEvent: CallEvent) {
