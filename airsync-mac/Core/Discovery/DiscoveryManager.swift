@@ -21,6 +21,27 @@ class DiscoveryManager: ObservableObject {
         setupBonjourBrowser()
         setupUdpDiscoveryObserver()
         setupNetworkMonitor()
+        setupDeviceConnectionObserver()
+    }
+    
+    private func setupDeviceConnectionObserver() {
+        AppState.shared.$device
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] device in
+                guard let self = self else { return }
+                if device != nil {
+                    if self.isRunning {
+                        print("[DiscoveryManager] Device connected. Stopping discovery and advertising.")
+                        self.stop()
+                    }
+                } else {
+                    if !self.isRunning {
+                        print("[DiscoveryManager] No device connected. Resuming discovery and advertising.")
+                        self.start()
+                    }
+                }
+            }
+            .store(in: &cancellables)
     }
     
     func start() {
@@ -152,6 +173,7 @@ class DiscoveryManager: ObservableObject {
         let monitor = NWPathMonitor()
         monitor.pathUpdateHandler = { [weak self] path in
             guard let self = self else { return }
+            guard self.isRunning else { return }
             print("[DiscoveryManager] Network path update: \(path.status)")
             
             DispatchQueue.main.async {
@@ -161,10 +183,8 @@ class DiscoveryManager: ObservableObject {
                 self.mergeAndPublish()
                 
                 // Restart Bonjour browser to trigger fresh searches on the new interface
-                if self.isRunning {
-                    self.bonjourBrowser.stop()
-                    self.bonjourBrowser.start()
-                }
+                self.bonjourBrowser.stop()
+                self.bonjourBrowser.start()
             }
         }
         self.networkMonitor = monitor

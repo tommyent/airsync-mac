@@ -28,6 +28,8 @@ extension WebSocketServer {
             handleNotification(message)
         case .callEvent:
             handleCallEvent(message)
+        case .callProgress:
+            handleCallProgress(message)
         case .notificationActionResponse:
             handleNotificationActionResponse(message)
         case .notificationAction:
@@ -306,6 +308,15 @@ extension WebSocketServer {
             )
             DispatchQueue.main.async {
                 AppState.shared.updateCallEvent(callEvent)
+            }
+        }
+    }
+
+    private func handleCallProgress(_ message: Message) {
+        if let dict = message.data.value as? [String: Any],
+           let eventId = dict["eventId"] as? String {
+            DispatchQueue.main.async {
+                AppState.shared.receivedCallProgress(eventId: eventId)
             }
         }
     }

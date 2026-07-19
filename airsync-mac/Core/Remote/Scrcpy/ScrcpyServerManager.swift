@@ -121,7 +121,7 @@ class ScrcpyServerManager: NSObject {
             "-s", serial,
             "shell",
             "CLASSPATH=\(serverRemotePath)",
-            "app_process", "/", "com.genymobile.scrcpy.Server", "4.0"
+            "app_process", "/", "com.genymobile.scrcpy.Server", "4.1"
         ] + serverArgs
         
         self.adbProcess = process
