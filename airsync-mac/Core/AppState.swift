@@ -223,11 +223,14 @@ class AppState: ObservableObject {
             let wasRegularConnection = oldValue?.ipAddress != nil && oldValue?.ipAddress != "BLE"
 
             if isRegularConnection {
-                // Regular connection established — immediately put BLE to idle (disconnect & stop scan)
+                // Regular connection established — immediately put BLE to idle (stop scan) and reset manual disconnect flag
                 if isBLEEnabled {
-                    print("[state] Regular connection active — disconnecting BLE and putting to idle")
+                    print("[state] Regular connection active — stopping BLE scan")
                     BLECentralManager.shared.stopScanning()
-                    BLECentralManager.shared.disconnect()
+                    if BLECentralManager.shared.isConnected {
+                        BLECentralManager.shared.disconnect()
+                    }
+                    BLECentralManager.shared.isManuallyDisconnected = false
                 }
                 // Cancel any pending delayed BLE wake-up tasks
                 self.bleWakeUpWorkItem?.cancel()
